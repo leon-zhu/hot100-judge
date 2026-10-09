@@ -298,19 +298,51 @@ function cmdProgress() {
   if (undone.length) console.log(`\n推荐继续刷（未完成 ${total - solved.size} 题，前 10）:\n` + undone.map((p) => `  #${p.id} ${p.title}`).join('\n'));
 }
 
-function usage() {
-  console.log(`Hot100 刷题命令行工具
+function usage(code = 1) {
+  console.log(`Hot100 刷题命令行工具 —— LeetCode Hot 100 本地刷题工作台
+题库 100 题 / 959 测试用例 / 400 份题解，纯本地离线可用。
 
-用法:
-  hot100 list [--company X] [--difficulty 简单|中等|困难] [--topic 数组] [--top 20] [--sort id|rank]
-  hot100 show <id> [--explain]
-  hot100 search <关键词>
-  hot100 random [--company X] [--unfinished]
-  hot100 init <id> [--lang java|python3|cpp]
-  hot100 judge <id> <file> [--lang java|python3|cpp] [--mode core|acm]
-  hot100 mark <id> done|star|unstar|reset
-  hot100 progress`);
-  process.exit(1);
+用法:  hot100 <命令> [参数]
+
+── 查询 ─────────────────────────────
+  list [选项]                  题目列表（表格输出）
+      选项: --company <公司>   --difficulty 简单|中等|困难   --topic <专题>
+            --top <N>          --sort id|rank
+      示例: hot100 list --top 20
+           hot100 list --company 字节跳动 --difficulty 中等 --sort rank
+
+  show <题号> [--explain]      题目详情（描述/核心签名/ACM/CodeTop 高频）
+      加 --explain 追加解题思路与参考题解
+      示例: hot100 show 1            # 只看题目信息
+           hot100 show 1 --explain   # 附带解题思路与双语言参考题解
+
+  search <关键词>               按标题/描述/专题搜索
+      示例: hot100 search 最长
+
+  random [--company X] [--unfinished]   随机抽一题
+      示例: hot100 random --unfinished   # 只从未完成的题里抽
+
+── 刷题 ─────────────────────────────
+  init <题号> [--lang java|python3|cpp]   生成模板文件（默认 Java）
+      模板含正确的方法签名与 import，可直接开始写
+      示例: hot100 init 1 --lang java
+
+  judge <题号> <文件> [--lang X] [--mode core|acm]   提交答案评测
+      语言按扩展名推断（.java/.py/.cpp），--mode 默认 core
+      通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际
+      示例: hot100 judge 1 sol-1.java
+           hot100 judge 20 sol.py --lang python3 --mode core
+
+── 进度 ─────────────────────────────
+  mark <题号> done|star|unstar|reset   标记已刷 / 收藏错题 / 取消
+      示例: hot100 mark 42 done       # 标记已刷
+           hot100 mark 42 star        # 收藏到错题本
+
+  progress                   刷题进度统计（已刷/收藏/难度与专题分布/推荐继续刷）
+
+  -h, --help                 显示本帮助
+进度数据保存在 work/cli-state.json，纯本地。`);
+  process.exit(code);
 }
 
 async function main() {
@@ -325,6 +357,7 @@ async function main() {
     case 'judge': await cmdJudge(flags, positional); break;
     case 'mark': cmdMark(flags, positional); break;
     case 'progress': cmdProgress(); break;
+    case '-h': case '--help': case 'help': usage(0); break;
     default: usage();
   }
 }
