@@ -97,6 +97,56 @@ function cmdRandom(flags) {
   console.log(`  ${p.explain ? p.explain.split('\n')[0] : ''}`);
 }
 
+// ---- show ----
+function coreSignature(core) {
+  if (core.kind === 'ops') {
+    const ctor = (core.ops.constructor || []).map((p) => `${p.type} ${p.name}`).join(', ');
+    const methods = (core.ops.methods || []).map((m) => `    public ${m.ret || 'void'} ${m.name}(${m.args.map((t, i) => t + ' a' + i).join(', ')})`);
+    return `class ${core.className}(${ctor})\n` + methods.join('\n');
+  }
+  const params = core.params.map((p) => `${p.type} ${p.name}${p.desc ? '  // ' + p.desc : ''}`).join('\n      ');
+  return `class ${core.className} {\n    public ${core.returns} ${core.method}(${core.params.map((p) => p.type + ' ' + p.name).join(', ')})\n}`;
+}
+
+function companyTags(p) {
+  if (!p.freq || !p.freq.companies) return '-';
+  return p.freq.companies.slice(0, 8).map((c) => `${c.name}(${c.value})`).join(' ');
+}
+
+function cmdShow(flags, positional) {
+  const p = findProblem(positional[0]);
+  console.log(`\n#${p.id} ${p.title}   ${p.difficulty} · ${p.topic}`);
+  console.log(`链接: ${p.url}`);
+  if (p.freq) {
+    console.log(`CodeTop: 排名 #${p.freq.rank}  出现 ${p.freq.value} 次  最近被考 ${p.freq.lastAsked}`);
+    console.log(`常考公司: ${companyTags(p)}`);
+  }
+  console.log(`\n题目描述:\n${p.desc}`);
+  if (p.core) {
+    console.log(`\n核心代码模式（${p.core.kind === 'ops' ? '类' : '函数'}）:`);
+    console.log(coreSignature(p.core));
+  }
+  if (p.acm) {
+    console.log(`\nACM 模式输入:`);
+    console.log(p.acm.input);
+    console.log(`ACM 模式输出:`);
+    console.log(p.acm.output);
+    if (p.acm.examples && p.acm.examples[0]) {
+      console.log(`示例:\n  输入: ${p.acm.examples[0].input}\n  输出: ${p.acm.examples[0].output}`);
+    }
+  }
+  if (p.explain) console.log(`\n解题思路:\n${p.explain}`);
+  const sol = DATA.solutions[String(p.id)];
+  if (sol && sol.python3 && sol.python3.core) {
+    console.log(`\n参考题解 · Python3（核心代码模式）:`);
+    console.log(sol.python3.core);
+  }
+  if (sol && sol.cpp && sol.cpp.core) {
+    console.log(`\n参考题解 · C++（核心代码模式）:`);
+    console.log(sol.cpp.core);
+  }
+}
+
 function usage() {
   console.log(`Hot100 刷题命令行工具
 
@@ -119,7 +169,8 @@ async function main() {
     case 'list': cmdList(flags); break;
     case 'search': cmdSearch(flags, positional); break;
     case 'random': cmdRandom(flags); break;
-    case 'show': case 'init': case 'judge': case 'mark': case 'progress':
+    case 'show': cmdShow(flags, positional); break;
+    case 'init': case 'judge': case 'mark': case 'progress':
       die(`命令 ${cmd} 尚未实现（将在后续任务加入）`);
       break;
     default: usage();
