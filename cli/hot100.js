@@ -10,6 +10,8 @@ const DATA = {
   solutions: JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/solutions.json'), 'utf8')),
   tests: JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/tests.json'), 'utf8')),
 };
+// Java 类型词汇与评测驱动共用同一来源（bool→boolean、list→ListNode、grid→char[][]…）
+const { JAVA_TYPE } = require(path.join(ROOT, 'judge', 'java-driver'));
 
 const STATE_FILE = path.join(ROOT, 'work', 'cli-state.json');
 function loadState() {
@@ -164,15 +166,16 @@ function initTemplate(p, lang) {
   const core = p.core;
   if (!core) die('该题无核心代码模式数据，无法生成模板');
   if (lang === 'java') {
+    const jtype = (t) => JAVA_TYPE[t] || t;
     if (core.kind === 'ops') {
-      const ctor = (core.ops.constructor || []).map((x) => `${x.type} ${x.name}`).join(', ');
+      const ctor = (core.ops.constructor || []).map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
       const methods = (core.ops.methods || []).map((m) =>
-        `    public ${m.ret || 'void'} ${m.name}(${m.args.map((t, i) => t + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
+        `    public ${jtype(m.ret)} ${m.name}(${m.args.map((t, i) => jtype(t) + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
       return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
     }
-    const params = core.params.map((x) => `${x.type} ${x.name}`).join(', ');
+    const params = core.params.map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
     const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
-    return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.returns} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
+    return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
   }
   // python3 / cpp：直接用题库自带的 core.templates（含 ops 类模板），保证签名与评测驱动一致
   const tpl = core.templates && core.templates[lang];
@@ -205,14 +208,15 @@ async function cmdJudge(flags, positional) {
     console.error(`✗ ${outcome.phase === 'compile' ? '编译失败' : '运行失败'}`);
     if (outcome.compileError) console.error(outcome.compileError);
     else console.error(outcome.error);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   const { passed, total } = summarize(outcome.results, mode);
   const failed = outcome.results.filter((r) => !r.ok);
   for (const r of failed.slice(0, 5)) {
     console.error(`  [用例 ${r.index}] ${r.error ? r.error.split('\n')[0] : ''}`);
     if (r.expected !== undefined && r.got !== undefined) {
-      console.error(`      期望: ${r.expected}  实际: ${r.got}`);
+      console.error(`      期望: ${JSON.stringify(r.expected)}  实际: ${JSON.stringify(r.got)}`);
     }
   }
   if (failed.length > 5) console.error(`  … 其余 ${failed.length - 5} 个失败用例省略`);
