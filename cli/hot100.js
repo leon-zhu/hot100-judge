@@ -23,6 +23,7 @@ function loadState() {
 }
 function saveState(s) {
   s.updatedAt = new Date().toISOString();
+  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2));
 }
 
