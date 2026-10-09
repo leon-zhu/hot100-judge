@@ -9,7 +9,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { runProcess, commandExists, DEFAULT_TIMEOUT_MS } = require('./runner');
-const { buildPythonDriver, buildCppDriver } = require('./core-driver');
+const { buildPythonDriver, buildCppDriver, buildJavaDriver } = require('./core-driver');
 
 const CORE_TIMEOUT_MS = 8000;
 
@@ -131,6 +131,29 @@ async function judgeCore({ language, code, core, tests }) {
         return { error: '编译错误（驱动已注入，请检查核心函数/类签名）', compileError: compiled.stderr || compiled.error, phase: 'compile' };
       }
       const run = await runProcess(binary, [casesFile], { cwd: tmp, timeout: CORE_TIMEOUT_MS });
+      if (run.timedOut) return { error: `运行超时 ${run.ms}ms`, phase: 'run' };
+      if (run.code !== 0) return { error: run.stderr || run.error || `退出码 ${run.code}`, phase: 'run' };
+      return parseCoreResults(run.stdout);
+    }
+
+    if (language === 'java') {
+      const javac = await commandExists('javac');
+      const java = await commandExists('java');
+      if (!javac || !java) return { error: '当前系统未安装 javac/java。', phase: 'compile' };
+      const source = buildJavaDriver({ core, code, cases });
+      const srcMain = path.join(tmp, 'Main.java');
+      const srcUser = path.join(tmp, `${core.className}.java`);
+      const outDir = path.join(tmp, 'out');
+      const casesFile = path.join(tmp, 'cases.json');
+      fs.mkdirSync(outDir);
+      fs.writeFileSync(srcMain, source, 'utf8');
+      fs.writeFileSync(srcUser, code, 'utf8');
+      fs.writeFileSync(casesFile, JSON.stringify(cases), 'utf8');
+      const compiled = await runProcess(javac, ['-encoding', 'UTF-8', '-d', outDir, srcMain, srcUser], { cwd: tmp, phase: 'compile' });
+      if (compiled.code !== 0 || compiled.timedOut) {
+        return { error: '编译错误（请检查核心类/方法签名）', compileError: compiled.stderr || compiled.error, phase: 'compile' };
+      }
+      const run = await runProcess(java, ['-cp', outDir, 'Main', casesFile], { cwd: tmp, timeout: CORE_TIMEOUT_MS });
       if (run.timedOut) return { error: `运行超时 ${run.ms}ms`, phase: 'run' };
       if (run.code !== 0) return { error: run.stderr || run.error || `退出码 ${run.code}`, phase: 'run' };
       return parseCoreResults(run.stdout);

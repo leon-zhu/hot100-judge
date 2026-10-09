@@ -759,4 +759,5 @@ ${materializeLines}
   return parts.join('\n');
 }
 
-module.exports = { buildPythonDriver, buildCppDriver, pyLiteral };
+const { buildJavaDriver } = require('./java-driver');
+module.exports = { buildPythonDriver, buildCppDriver, pyLiteral, buildJavaDriver };
