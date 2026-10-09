@@ -153,15 +153,20 @@ function cmdShow(flags, positional) {
       console.log(`示例:\n  输入: ${p.acm.examples[0].input}\n  输出: ${p.acm.examples[0].output}`);
     }
   }
-  if (p.explain) console.log(`\n解题思路:\n${p.explain}`);
-  const sol = DATA.solutions[String(p.id)];
-  if (sol && sol.python3 && sol.python3.core) {
-    console.log(`\n参考题解 · Python3（核心代码模式）:`);
-    console.log(sol.python3.core);
-  }
-  if (sol && sol.cpp && sol.cpp.core) {
-    console.log(`\n参考题解 · C++（核心代码模式）:`);
-    console.log(sol.cpp.core);
+  // 解题思路与参考题解默认不展示，加 --explain 追加
+  if (flags.explain) {
+    if (p.explain) console.log(`\n解题思路:\n${p.explain}`);
+    const sol = DATA.solutions[String(p.id)];
+    if (sol && sol.python3 && sol.python3.core) {
+      console.log(`\n参考题解 · Python3（核心代码模式）:`);
+      console.log(sol.python3.core);
+    }
+    if (sol && sol.cpp && sol.cpp.core) {
+      console.log(`\n参考题解 · C++（核心代码模式）:`);
+      console.log(sol.cpp.core);
+    }
+  } else {
+    console.log(`\n提示: 加 --explain 查看解题思路与参考题解`);
   }
 }
 
@@ -298,7 +303,7 @@ function usage() {
 
 用法:
   hot100 list [--company X] [--difficulty 简单|中等|困难] [--topic 数组] [--top 20] [--sort id|rank]
-  hot100 show <id>
+  hot100 show <id> [--explain]
   hot100 search <关键词>
   hot100 random [--company X] [--unfinished]
   hot100 init <id> [--lang java|python3|cpp]
