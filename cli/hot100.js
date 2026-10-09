@@ -147,6 +147,95 @@ function cmdShow(flags, positional) {
   }
 }
 
+const LANG_EXT = { java: 'java', python3: 'py', cpp: 'cpp' };
+const EXT_LANG = { java: 'java', py: 'python3', cpp: 'cpp' };
+
+function zeroLiteral(type) {
+  const m = {
+    int: '0', double: '0.0', bool: 'false', string: '""',
+    'int[]': 'new int[0]', 'int[][]': 'new int[0][]',
+    'string[]': 'new String[0]', 'string[][]': 'new String[0][]',
+    grid: 'new char[0][]', list: 'null', tree: 'null', randomList: 'null',
+  };
+  return m[type] || 'null';
+}
+
+function initTemplate(p, lang) {
+  const core = p.core;
+  if (!core) die('该题无核心代码模式数据，无法生成模板');
+  if (lang === 'java') {
+    if (core.kind === 'ops') {
+      const ctor = (core.ops.constructor || []).map((x) => `${x.type} ${x.name}`).join(', ');
+      const methods = (core.ops.methods || []).map((m) =>
+        `    public ${m.ret || 'void'} ${m.name}(${m.args.map((t, i) => t + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
+      return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
+    }
+    const params = core.params.map((x) => `${x.type} ${x.name}`).join(', ');
+    const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
+    return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.returns} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
+  }
+  // python3 / cpp 模板：仅核心签名注释（直接给参考题解更实用，但保证签名正确）
+  if (lang === 'python3') {
+    return `# Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n# ${(p.explain || '').split('\n')[0]}\nclass ${core.className}:\n    def ${core.method}(self${core.params.map((x) => ', ' + x.name).join('')}):\n        # TODO: 实现\n        pass\n`;
+  }
+  return `// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\npublic:\n    ${core.returns} ${core.method}(${core.params.map((x) => x.type + ' ' + x.name).join(', ')}) {\n        // TODO: 实现\n    }\n};\n`;
+}
+
+async function cmdJudge(flags, positional) {
+  const id = positional[0];
+  const file = positional[1];
+  if (!file) die('用法: hot100 judge <id> <文件> [--lang java|python3|cpp] [--mode core|acm]');
+  const p = findProblem(id);
+  let code;
+  try { code = fs.readFileSync(file, 'utf8'); } catch { die(`文件不存在: ${file}`); }
+  const ext = path.extname(file).slice(1).toLowerCase();
+  const lang = flags.lang || EXT_LANG[ext] || 'java';
+  const mode = flags.mode || 'core';
+  if (lang === 'java' && mode !== 'core') die('Java 仅支持核心代码模式（--mode core）');
+  const useCore = mode === 'core' || lang === 'java';
+  if (useCore && !p.core) die('该题无核心代码模式数据');
+  const tests = DATA.tests[String(p.id)] ? DATA.tests[String(p.id)][mode] : [];
+  if (!tests || !tests.length) die(`该题无 ${mode} 测试用例`);
+  const { judgeCore, judgeACM, summarize } = require(path.join(ROOT, 'judge', 'judge'));
+  const outcome = useCore
+    ? await judgeCore({ language: lang, code, core: p.core, tests })
+    : await judgeACM({ language: lang, code, tests });
+  console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · ${lang} · ${mode === 'core' ? '核心代码模式' : 'ACM 模式'}`);
+  if (outcome.error) {
+    console.error(`✗ ${outcome.phase === 'compile' ? '编译失败' : '运行失败'}`);
+    if (outcome.compileError) console.error(outcome.compileError);
+    else console.error(outcome.error);
+    process.exit(1);
+  }
+  const { passed, total } = summarize(outcome.results, mode);
+  const failed = outcome.results.filter((r) => !r.ok);
+  for (const r of failed.slice(0, 5)) {
+    console.error(`  [用例 ${r.index}] ${r.error ? r.error.split('\n')[0] : ''}`);
+    if (r.expected !== undefined && r.got !== undefined) {
+      console.error(`      期望: ${r.expected}  实际: ${r.got}`);
+    }
+  }
+  if (failed.length > 5) console.error(`  … 其余 ${failed.length - 5} 个失败用例省略`);
+  if (passed === total) {
+    console.log(`✅ ${passed}/${total} 全部通过`);
+    console.log(`  提示: 已通过可执行 hot100 mark ${p.id} done 记录已刷`);
+  } else {
+    console.log(`❌ ${passed}/${total} 通过`);
+    process.exitCode = 1;
+  }
+}
+
+function cmdInit(flags, positional) {
+  const id = positional[0];
+  if (!id) die('用法: hot100 init <id> [--lang java|python3|cpp]');
+  const p = findProblem(id);
+  const lang = flags.lang || 'java';
+  const ext = LANG_EXT[lang];
+  const file = `sol-${id}.${ext}`;
+  fs.writeFileSync(file, initTemplate(p, lang));
+  console.log(`已生成 ${file}（hot100 judge ${id} ${file} 即可评测）`);
+}
+
 function usage() {
   console.log(`Hot100 刷题命令行工具
 
@@ -170,8 +259,10 @@ async function main() {
     case 'search': cmdSearch(flags, positional); break;
     case 'random': cmdRandom(flags); break;
     case 'show': cmdShow(flags, positional); break;
-    case 'init': case 'judge': case 'mark': case 'progress':
-      die(`命令 ${cmd} 尚未实现（将在后续任务加入）`);
+    case 'init': cmdInit(flags, positional); break;
+    case 'judge': await cmdJudge(flags, positional); break;
+    case 'mark': case 'progress':
+      die(`命令 ${cmd} 尚未实现（将在 Task 6 加入）`);
       break;
     default: usage();
   }
