@@ -176,7 +176,8 @@ function initTemplate(p, lang) {
   }
   // python3 / cpp 模板：仅核心签名注释（直接给参考题解更实用，但保证签名正确）
   if (lang === 'python3') {
-    return `# Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n# ${(p.explain || '').split('\n')[0]}\nclass ${core.className}:\n    def ${core.method}(self${core.params.map((x) => ', ' + x.name).join('')}):\n        # TODO: 实现\n        pass\n`;
+    // Python3 核心代码模式驱动按顶层自由函数调用（def twoSum(nums, target):），非 class 方法
+    return `# Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n# ${(p.explain || '').split('\n')[0]}\ndef ${core.method}(${core.params.map((x) => x.name).join(', ')}):\n    # TODO: 实现\n    pass\n`;
   }
   return `// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\npublic:\n    ${core.returns} ${core.method}(${core.params.map((x) => x.type + ' ' + x.name).join(', ')}) {\n        // TODO: 实现\n    }\n};\n`;
 }

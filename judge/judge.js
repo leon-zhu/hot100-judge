@@ -177,7 +177,7 @@ function parseCoreResults(stdout) {
     return { error: '评测驱动输出异常', phase: 'run', raw: stdout.slice(0, 2000) };
   }
   if (!Array.isArray(arr)) return { error: '评测驱动输出异常', phase: 'run' };
-  return { results: arr };
+  return { results: arr.map((r, i) => ({ index: i, ...r })) };
 }
 
 /** 汇总为前端展示结构。 */
