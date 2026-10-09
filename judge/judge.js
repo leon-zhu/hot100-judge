@@ -140,6 +140,7 @@ async function judgeCore({ language, code, core, tests }) {
       const javac = await commandExists('javac');
       const java = await commandExists('java');
       if (!javac || !java) return { error: '当前系统未安装 javac/java。', phase: 'compile' };
+      if (core.kind === 'ops') return { error: '该题核心代码模式为 ops 类型，Java 暂不支持（请用 Python3/C++）', phase: 'compile' };
       const source = buildJavaDriver({ core, code, cases });
       const srcMain = path.join(tmp, 'Main.java');
       const srcUser = path.join(tmp, `${core.className}.java`);
@@ -153,7 +154,7 @@ async function judgeCore({ language, code, core, tests }) {
       if (compiled.code !== 0 || compiled.timedOut) {
         return { error: '编译错误（请检查核心类/方法签名）', compileError: compiled.stderr || compiled.error, phase: 'compile' };
       }
-      const run = await runProcess(java, ['-cp', outDir, 'Main', casesFile], { cwd: tmp, timeout: CORE_TIMEOUT_MS });
+      const run = await runProcess(java, ['-Xmx256m', '-XX:ReservedCodeCacheSize=48m', '-XX:MaxMetaspaceSize=96m', '-Dfile.encoding=UTF-8', '-cp', outDir, 'Main', casesFile], { cwd: tmp, timeout: CORE_TIMEOUT_MS });
       if (run.timedOut) return { error: `运行超时 ${run.ms}ms`, phase: 'run' };
       if (run.code !== 0) return { error: run.stderr || run.error || `退出码 ${run.code}`, phase: 'run' };
       return parseCoreResults(run.stdout);
