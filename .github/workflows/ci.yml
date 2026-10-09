@@ -20,6 +20,8 @@ jobs:
           python3 --version
           gcc --version | head -1
           g++ --version | head -1
+          java -version 2>&1 | head -1
+          javac -version 2>&1 | head -1
 
       - name: 评测管线自测（驱动生成：链表/树/矩阵/ops）
         run: node scripts/test-judge.js
@@ -42,6 +44,9 @@ jobs:
 
       - name: 全量题解验证（100 题 × ACM/核心 × Python3/C++，真实编译运行）
         run: node scripts/verify-parts.js all
+
+      - name: Java 驱动验证（100 题桩冒烟 + 13 份参考题解）
+        run: node scripts/verify-java.js
 
       - name: 前端语法检查
         run: node --check public/app.js && node --check server.js
