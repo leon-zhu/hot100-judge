@@ -19,3 +19,4 @@ work/_scratch/
 Thumbs.db
 .bin/
 work/parts/*.orig.json
+work/cli-state.json

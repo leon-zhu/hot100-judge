@@ -240,6 +240,43 @@ function cmdInit(flags, positional) {
   console.log(`已生成 ${file}（hot100 judge ${id} ${file} 即可评测）`);
 }
 
+function cmdMark(flags, positional) {
+  const id = positional[0];
+  const action = positional[1] || 'done';
+  if (!id) die('用法: hot100 mark <id> done|star|unstar|reset');
+  findProblem(id);
+  const state = loadState();
+  if (action === 'done') { if (!state.solved.includes(Number(id))) state.solved.push(Number(id)); }
+  else if (action === 'reset') { state.solved = state.solved.filter((x) => x !== Number(id)); }
+  else if (action === 'star') { if (!state.starred.includes(Number(id))) state.starred.push(Number(id)); }
+  else if (action === 'unstar') { state.starred = state.starred.filter((x) => x !== Number(id)); }
+  else die(`未知操作: ${action}`);
+  saveState(state);
+  console.log(`已标记 #${id} ${action}`);
+}
+
+function cmdProgress() {
+  const state = loadState();
+  const solved = new Set(state.solved);
+  const total = DATA.problems.length;
+  const pct = Math.round((solved.size / total) * 100);
+  const byDiff = { 简单: 0, 中等: 0, 困难: 0 };
+  const byTopic = new Map();
+  const starList = state.starred.map((id) => DATA.problems.find((p) => p.id === id)).filter(Boolean);
+  for (const p of DATA.problems) {
+    if (!solved.has(p.id)) continue;
+    byDiff[p.difficulty] = (byDiff[p.difficulty] || 0) + 1;
+    byTopic.set(p.topic, (byTopic.get(p.topic) || 0) + 1);
+  }
+  console.log(`已刷 ${solved.size} / ${total}（${pct}%）`);
+  console.log(`收藏 ${starList.length} 题`);
+  console.log(`按难度: ${Object.entries(byDiff).map(([k, v]) => `${k} ${v}`).join('  ')}`);
+  console.log(`按专题: ${[...byTopic.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v}`).join('  ')}`);
+  if (starList.length) console.log(`\n收藏列表:\n` + starList.map((p) => `  ★ #${p.id} ${p.title}`).join('\n'));
+  const undone = DATA.problems.filter((p) => !solved.has(p.id)).slice(0, 10);
+  if (undone.length) console.log(`\n推荐继续刷（未完成 ${total - solved.size} 题，前 10）:\n` + undone.map((p) => `  #${p.id} ${p.title}`).join('\n'));
+}
+
 function usage() {
   console.log(`Hot100 刷题命令行工具
 
@@ -265,9 +302,8 @@ async function main() {
     case 'show': cmdShow(flags, positional); break;
     case 'init': cmdInit(flags, positional); break;
     case 'judge': await cmdJudge(flags, positional); break;
-    case 'mark': case 'progress':
-      die(`命令 ${cmd} 尚未实现（将在 Task 6 加入）`);
-      break;
+    case 'mark': cmdMark(flags, positional); break;
+    case 'progress': cmdProgress(); break;
     default: usage();
   }
 }
