@@ -60,6 +60,18 @@ function statusMark(p, state) {
   return ' ';
 }
 
+// 东亚宽字符（CJK/全角）在终端占 2 列，padEnd 按 UTF-16 码元数填充会导致中文列错位
+const WIDE_RE = /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
+function dispWidth(s) {
+  let w = 0;
+  for (const ch of String(s)) w += WIDE_RE.test(ch) ? 2 : 1;
+  return w;
+}
+function padW(t, n) {
+  const d = n - dispWidth(t);
+  return t + (d > 0 ? ' '.repeat(d) : '');
+}
+
 // ---- list ----
 function cmdList(flags) {
   let list = [...DATA.problems];
@@ -70,11 +82,10 @@ function cmdList(flags) {
   list.sort(flags.sort === 'rank' ? byRank : (a, b) => a.id - b.id);
   if (flags.top) list = list.slice(0, Number(flags.top));
   const state = loadState();
-  const w = (t, n, s) => (t + (s || '')).padEnd(n);
-  console.log(w('ID', 5) + w('难度', 6) + w('专题', 16) + w('高频', 5) + w('标题', 40) + '状态');
+  console.log(padW('ID', 5) + padW('难度', 6) + padW('专题', 16) + padW('高频', 5) + padW('标题', 40) + '状态');
   for (const p of list) {
-    console.log(w(String(p.id), 5) + w(p.difficulty, 6) + w(p.topic, 16) +
-      w(String((p.freq && p.freq.rank) || '-'), 5) + w(p.title, 40) + statusMark(p, state));
+    console.log(padW(String(p.id), 5) + padW(p.difficulty, 6) + padW(p.topic, 16) +
+      padW(String((p.freq && p.freq.rank) || '-'), 5) + padW(p.title, 40) + statusMark(p, state));
   }
   console.log(`\n共 ${list.length} 题`);
 }
