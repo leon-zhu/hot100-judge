@@ -1,1 +1,13 @@
-{"scripts":{"start":"node server.js","dev":"node server.js"},"dependencies":{},"devDependencies":{}}
+{
+  "name": "hot100-judge",
+  "version": "1.0.0",
+  "bin": {
+    "hot100": "cli/hot100.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
