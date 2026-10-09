@@ -15,7 +15,11 @@ const { JAVA_TYPE } = require(path.join(ROOT, 'judge', 'java-driver'));
 
 const STATE_FILE = path.join(ROOT, 'work', 'cli-state.json');
 function loadState() {
-  try { return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { return { solved: [], starred: [], updatedAt: null }; }
+  try {
+    const s = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (s && Array.isArray(s.solved) && Array.isArray(s.starred)) return s;
+  } catch { /* 解析失败或结构非法，回退到空状态 */ }
+  return { solved: [], starred: [], updatedAt: null };
 }
 function saveState(s) {
   s.updatedAt = new Date().toISOString();
