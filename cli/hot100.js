@@ -174,12 +174,11 @@ function initTemplate(p, lang) {
     const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
     return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.returns} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
   }
-  // python3 / cpp 模板：仅核心签名注释（直接给参考题解更实用，但保证签名正确）
-  if (lang === 'python3') {
-    // Python3 核心代码模式驱动按顶层自由函数调用（def twoSum(nums, target):），非 class 方法
-    return `# Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n# ${(p.explain || '').split('\n')[0]}\ndef ${core.method}(${core.params.map((x) => x.name).join(', ')}):\n    # TODO: 实现\n    pass\n`;
-  }
-  return `// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\npublic:\n    ${core.returns} ${core.method}(${core.params.map((x) => x.type + ' ' + x.name).join(', ')}) {\n        // TODO: 实现\n    }\n};\n`;
+  // python3 / cpp：直接用题库自带的 core.templates（含 ops 类模板），保证签名与评测驱动一致
+  const tpl = core.templates && core.templates[lang];
+  if (!tpl) die(`该题暂无 ${lang} 核心代码模板`);
+  const cmt = lang === 'python3' ? '#' : '//';
+  return `${cmt} Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n${cmt} ${(p.explain || '').split('\n')[0]}\n${tpl}`;
 }
 
 async function cmdJudge(flags, positional) {
