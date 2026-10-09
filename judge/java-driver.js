@@ -378,21 +378,27 @@ public class Main {
 }
 `;
 
+// 参数转换工厂：exprOf(i) 生成取第 i 个参数的表达式。
+// function 型用 args.get(i)，ops 型用 _a.get(j)。
+function paramConvFor(exprOf) {
+  return {
+    int: (i) => `((Number) ${exprOf(i)}).intValue()`,
+    double: (i) => `((Number) ${exprOf(i)}).doubleValue()`,
+    bool: (i) => `((Boolean) ${exprOf(i)}).booleanValue()`,
+    string: (i) => `(String) ${exprOf(i)}`,
+    'int[]': (i) => `toIntArray(${exprOf(i)})`,
+    'int[][]': (i) => `toIntMatrix(${exprOf(i)})`,
+    'string[]': (i) => `toStringArray(${exprOf(i)})`,
+    'string[][]': (i) => `toStringMatrix(${exprOf(i)})`,
+    grid: (i) => `(char[][]) build(${exprOf(i)})`,
+    list: (i) => `(ListNode) build(${exprOf(i)})`,
+    tree: (i) => `(TreeNode) build(${exprOf(i)})`,
+    randomList: (i) => `(Node) build(${exprOf(i)})`,
+  };
+}
+
 // 参数（来自 cases 的 args 列表）转类型
-const PARAM_CONV = {
-  int: (i) => `((Number) args.get(${i})).intValue()`,
-  double: (i) => `((Number) args.get(${i})).doubleValue()`,
-  bool: (i) => `((Boolean) args.get(${i})).booleanValue()`,
-  string: (i) => `(String) args.get(${i})`,
-  'int[]': (i) => `toIntArray(args.get(${i}))`,
-  'int[][]': (i) => `toIntMatrix(args.get(${i}))`,
-  'string[]': (i) => `toStringArray(args.get(${i}))`,
-  'string[][]': (i) => `toStringMatrix(args.get(${i}))`,
-  grid: (i) => `(char[][]) build(args.get(${i}))`,
-  list: (i) => `(ListNode) build(args.get(${i}))`,
-  tree: (i) => `(TreeNode) build(args.get(${i}))`,
-  randomList: (i) => `(Node) build(args.get(${i}))`,
-};
+const PARAM_CONV = paramConvFor((i) => `args.get(${i})`);
 
 // 返回值转 canon（标量直接转 double/原值，复合走 canon）
 const RET_CONV = {
@@ -439,9 +445,48 @@ function buildFunctionBody(core) {
   ].join('\n');
 }
 
-/** 统一入口：当前只支持 function kind（ops 在 Task 2 加入） */
+/** ops 型：LRU/最小栈/Trie/数据流中位数。按 op 字符串派发。 */
+const OP_CONV = paramConvFor((j) => `_a.get(${j})`);
+
+function buildOpsBody(core) {
+  const className = core.className;
+  const ctor = core.ops.constructor || [];
+  const ctorCall = ctor.map((p, j) => `${OP_CONV[p.type](j)}`).join(', ');
+  const methodDispatch = (core.ops.methods || []).map((m) => {
+    const argExpr = m.args.map((t, j) => `${OP_CONV[t](j)}`).join(', ');
+    const call = `_obj.${m.name}(${argExpr})`;
+    // 注意：每个 op 都要往 _out 追加一项（与 Python/C++ 驱动一致），void 追加 null
+    const retLine = m.ret === 'void'
+      ? `${call}; _out.add(null);`
+      : `_out.add(${RET_CONV[m.ret](call)});`;
+    return `} else if (op.equals(${JSON.stringify(m.name)})) {\n            ${retLine}`;
+  }).join('\n');
+  const body = [
+    `List<?> _ops = (List<?>) c.get("ops");`,
+    `List<?> _argss = (List<?>) c.get("args");`,
+    `${className} _obj = null;`,
+    `List<Object> _out = new ArrayList<>();`,
+    `for (int i = 0; i < _ops.size(); i++) {`,
+    `    String op = (String) _ops.get(i);`,
+    `    List<?> _a = (List<?>) _argss.get(i);`,
+    `    if (op.equals(${JSON.stringify(className)})) {`,
+    `        _obj = new ${className}(${ctorCall});`,
+    `        _out.add(null);`,
+    methodDispatch,
+    `    } else {`,
+    `        throw new RuntimeException("unknown op: " + op);`,
+    `    }`,
+    `}`,
+    `Object _exp = canon(build(c.get("expected")));`,
+    `if (Objects.deepEquals(_out, _exp)) { sb.append(okJson()); }`,
+    `else { sb.append("{\\"ok\\":false,\\"expected\\":").append(toJson(_exp)).append(",\\"got\\":").append(toJson(_out)).append("}"); }`,
+  ].join('\n');
+  return body;
+}
+
+/** 统一入口：function / ops 两种核心代码模式 */
 function buildJavaDriver({ core, code, cases }) {
-  const body = buildFunctionBody(core);
+  const body = core.kind === 'ops' ? buildOpsBody(core) : buildFunctionBody(core);
   const driver = JAVA_PREAMBLE.replace('{{MAIN_BODY}}', body);
   // cases 序列化为 cases.json 由 judge.js 写入，这里不内嵌
   return driver;

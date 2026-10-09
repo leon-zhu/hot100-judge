@@ -51,7 +51,7 @@ async function main() {
   const ids = problems
     .filter((p) => p.core)
     .filter((p) => !only || String(p.id) === only)
-    .filter((p) => p.core.kind !== 'ops'); // TODO(task2): ops 驱动加入后移除该过滤
+    .filter((p) => p.core.kind === 'function' || p.core.kind === 'ops');
   // part 1: 桩冒烟
   for (const prob of ids) {
     if (!tests[prob.id] || !tests[prob.id].core) continue;

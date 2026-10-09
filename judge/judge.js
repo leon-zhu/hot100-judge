@@ -140,7 +140,6 @@ async function judgeCore({ language, code, core, tests }) {
       const javac = await commandExists('javac');
       const java = await commandExists('java');
       if (!javac || !java) return { error: '当前系统未安装 javac/java。', phase: 'compile' };
-      if (core.kind === 'ops') return { error: '该题核心代码模式为 ops 类型，Java 暂不支持（请用 Python3/C++）', phase: 'compile' };
       const source = buildJavaDriver({ core, code, cases });
       const srcMain = path.join(tmp, 'Main.java');
       const srcUser = path.join(tmp, `${core.className}.java`);
