@@ -14,6 +14,17 @@ const CONFIG = path.join(ROOT, 'work', 'leetcode-config.json');
 const BASE = 'https://leetcode.cn';
 const POLL_TIMEOUT_MS = 30000;
 const POLL_INTERVAL_MS = 1000;
+const REQUEST_TIMEOUT_MS = 10000;
+
+async function fetchWithTimeout(url, opts, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function getAuth() {
   if (process.env.LEETCODE_SESSION && process.env.LEETCODE_CSRF_TOKEN) {
@@ -32,7 +43,7 @@ function slugFromUrl(url) {
 }
 
 async function graphql(auth, titleSlug) {
-  const res = await fetch(`${BASE}/graphql/`, {
+  const res = await fetchWithTimeout(`${BASE}/graphql/`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -50,7 +61,7 @@ async function graphql(auth, titleSlug) {
 }
 
 async function submit(auth, slug, qid, lang, code) {
-  const res = await fetch(`${BASE}/problems/${slug}/submit/`, {
+  const res = await fetchWithTimeout(`${BASE}/problems/${slug}/submit/`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -68,7 +79,7 @@ async function submit(auth, slug, qid, lang, code) {
 }
 
 async function check(auth, submissionId) {
-  const res = await fetch(`${BASE}/submissions/detail/${submissionId}/check/`, {
+  const res = await fetchWithTimeout(`${BASE}/submissions/detail/${submissionId}/check/`, {
     headers: { cookie: `csrftoken=${auth.csrf}; LEETCODE_SESSION=${auth.session}` },
   });
   return res.json();
@@ -79,9 +90,10 @@ async function submitToLeetCode({ problem, code, lang }) {
   if (!auth) {
     return { error: '未配置登录态：设置环境变量 LEETCODE_SESSION/LEETCODE_CSRF_TOKEN，或写入 work/leetcode-config.json（见 docs/CLI_GUIDE.md）' };
   }
-  const slug = slugFromUrl(problem.url);
-  if (!slug) return { error: `无法从题目 url 解析 slug: ${problem.url}` };
   try {
+    if (!problem || !problem.url) return { error: '缺少题目 url，无法解析 slug' };
+    const slug = slugFromUrl(problem.url);
+    if (!slug) return { error: `无法从题目 url 解析 slug: ${problem.url}` };
     const q = await graphql(auth, slug);
     if (!q || !q.questionId) return { error: '获取 questionId 失败（登录态可能失效）' };
     const s = await submit(auth, slug, q.questionId, lang, code);
@@ -91,14 +103,14 @@ async function submitToLeetCode({ problem, code, lang }) {
     do {
       await new Promise((res) => setTimeout(res, POLL_INTERVAL_MS));
       r = await check(auth, s.submissionId);
-      if (r && r.state === 'SUCCESS') break;
+      if (r && r.state && r.state !== 'STARTED' && r.state !== 'PENDING') break;
     } while (Date.now() < deadline);
     if (!r || r.state !== 'SUCCESS') return { error: '云端判定超时' };
     const accepted = r.status_code === 10;
     let detail = null;
-    if (r.status_code === 11 && r.last_testcase) {
-      detail = `最后一个用例: ${r.last_testcase}${r.expected_output !== undefined ? '  期望: ' + r.expected_output : ''}`;
-    } else if (r.status_code === 20 && r.compile_error) {
+    if (r.status_code === 11 && r.last_testcase != null) {
+      detail = `最后一个用例: ${r.last_testcase}${r.expected_output != null ? '  期望: ' + r.expected_output : ''}`;
+    } else if (r.status_code === 20 && r.compile_error != null) {
       detail = `编译错误: ${String(r.compile_error).slice(0, 300)}`;
     } else if (r.status_code === 14) {
       detail = '超时（Time Limit Exceeded）';
