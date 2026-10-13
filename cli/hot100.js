@@ -208,7 +208,7 @@ function initTemplate(p, lang) {
 async function cmdJudge(flags, positional) {
   const id = positional[0];
   const file = positional[1];
-  if (!file) die('用法: hot100 judge <id> <文件> [--lang java|python3|cpp] [--mode core|acm]');
+  if (!file) die('用法: hot100 judge <id> <文件> [--lang java|python3|cpp] [--mode core|acm] [--cloud] [--regenerate] [--no-extend]');
   const p = findProblem(id);
   let code;
   try { code = fs.readFileSync(file, 'utf8'); } catch { die(`文件不存在: ${file}`); }
@@ -218,13 +218,30 @@ async function cmdJudge(flags, positional) {
   if (lang === 'java' && mode !== 'core') die('Java 仅支持核心代码模式（--mode core）');
   const useCore = mode === 'core' || lang === 'java';
   if (useCore && !p.core) die('该题无核心代码模式数据');
-  const tests = DATA.tests[String(p.id)] ? DATA.tests[String(p.id)][mode] : [];
-  if (!tests || !tests.length) die(`该题无 ${mode} 测试用例`);
+  const bundled = DATA.tests[String(p.id)] ? DATA.tests[String(p.id)][mode] : [];
+  if (!bundled || !bundled.length) die(`该题无 ${mode} 测试用例`);
+
+  // 扩展用例：core 模式才合并；--no-extend 跳过；--regenerate 强制重建
+  let extended = [];
+  let hasExt = false;
+  if (useCore && !flags['no-extend']) {
+    const { loadExtendedTests, generateExtendedTests } = require(path.join(ROOT, 'judge', 'extend-tests'));
+    let cache = flags.regenerate ? null : loadExtendedTests(String(p.id));
+    if (!cache) {
+      cache = generateExtendedTests(String(p.id));
+      if (cache.core.length) console.log(`已生成 ${cache.core.length} 个扩展用例（work/extended/tests-${p.id}.json）`);
+    }
+    extended = cache.core || [];
+    hasExt = extended.length > 0;
+  }
+  const tests = [...bundled, ...extended];
+  const nBundled = bundled.length;
+
   const { judgeCore, judgeACM, summarize } = require(path.join(ROOT, 'judge', 'judge'));
   const outcome = useCore
     ? await judgeCore({ language: lang, code, core: p.core, tests })
     : await judgeACM({ language: lang, code, tests });
-  console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · ${lang} · ${mode === 'core' ? '核心代码模式' : 'ACM 模式'}`);
+  console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · ${lang} · ${mode === 'core' ? '核心代码模式' : 'ACM 模式'}${hasExt ? ` · 含 ${extended.length} 个扩展用例` : ''}`);
   if (outcome.error) {
     console.error(`✗ ${outcome.phase === 'compile' ? '编译失败' : '运行失败'}`);
     if (outcome.compileError) console.error(outcome.compileError);
@@ -235,7 +252,8 @@ async function cmdJudge(flags, positional) {
   const { passed, total } = summarize(outcome.results, mode);
   const failed = outcome.results.filter((r) => !r.ok);
   for (const r of failed.slice(0, 5)) {
-    console.error(`  [用例 ${r.index}] ${r.error ? r.error.split('\n')[0] : ''}`);
+    const kind = r.index < nBundled ? '内置' : '扩展';
+    console.error(`  [用例 ${r.index}·${kind}] ${r.error ? r.error.split('\n')[0] : ''}`);
     const t = tests[r.index];
     if (useCore) {
       const parts = [];
@@ -256,6 +274,23 @@ async function cmdJudge(flags, positional) {
   } else {
     console.log(`❌ ${passed}/${total} 通过`);
     process.exitCode = 1;
+  }
+
+  // 云端判定（仅核心代码模式；失败非致命，不影响本地退出码）
+  if (flags.cloud) {
+    if (!useCore) {
+      console.warn('  云端判定仅支持核心代码模式（--mode core），已跳过');
+    } else {
+      const { submitToLeetCode } = require(path.join(ROOT, 'judge', 'leetcode-submit'));
+      const verdict = await submitToLeetCode({ problem: p, code, lang });
+      if (verdict.error) {
+        console.warn(`  ⚠ 云端判定失败: ${verdict.error}`);
+      } else {
+        const mark = verdict.accepted ? '✅' : '❌';
+        console.log(`  ${mark} LeetCode: ${verdict.statusMsg}`);
+        if (verdict.detail) console.log(`     ${verdict.detail}`);
+      }
+    }
   }
 }
 
@@ -338,9 +373,12 @@ function usage(code = 1) {
 
   judge <题号> <文件> [--lang X] [--mode core|acm]   提交答案评测
       语言按扩展名推断（.java/.py/.cpp），--mode 默认 core
-      通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际
+      自动合并本地扩展测试用例（首次自动生成缓存，可 --regenerate 重建）
+      通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际（标注内置/扩展）
+      --cloud       本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie）
+      --no-extend   只用内置用例
       示例: hot100 judge 1 sol-1.java
-           hot100 judge 20 sol.py --lang python3 --mode core
+           hot100 judge 3 sol-3.java --cloud
 
 ── 进度 ─────────────────────────────
   mark <题号> done|star|unstar|reset   标记已刷 / 收藏错题 / 取消
