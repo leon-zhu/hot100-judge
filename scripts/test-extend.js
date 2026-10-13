@@ -75,6 +75,15 @@ async function main() {
   const cached = loadExtendedTests(3);
   check('缓存可读且 core 数一致', !!cached && cached.core.length === cases3.length);
 
+  console.log('云端：未配置登录态 → 非致命 error');
+  const { submitToLeetCode, getAuth } = require('../judge/leetcode-submit');
+  if (getAuth()) {
+    console.log('  已配置登录态，跳过未配置分支测试');
+  } else {
+    const verdict = await submitToLeetCode({ problem: p3, code: FIXED_SOL3, lang: 'java' });
+    check('未配置登录态 → 返回 error 而非抛异常', !!(verdict && verdict.error));
+  }
+
   console.log(`\n${failures === 0 ? '✅ 全部通过' : `❌ ${failures} 项失败`}`);
   process.exit(failures === 0 ? 0 : 1);
 }
