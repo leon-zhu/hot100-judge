@@ -236,6 +236,15 @@ async function cmdJudge(flags, positional) {
   const failed = outcome.results.filter((r) => !r.ok);
   for (const r of failed.slice(0, 5)) {
     console.error(`  [用例 ${r.index}] ${r.error ? r.error.split('\n')[0] : ''}`);
+    const t = tests[r.index];
+    if (useCore) {
+      const parts = [];
+      if (t && t.ops) parts.push(`ops=${JSON.stringify(t.ops)}`);
+      if (t && t.args) parts.push(`args=${JSON.stringify(t.args)}`);
+      if (parts.length) console.error(`      输入: ${parts.join(' ')}`);
+    } else if (t) {
+      console.error(`      输入: ${JSON.stringify(t.input)}`);
+    }
     if (r.expected !== undefined && r.got !== undefined) {
       console.error(`      期望: ${JSON.stringify(r.expected)}  实际: ${JSON.stringify(r.got)}`);
     }
