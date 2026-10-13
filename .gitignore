@@ -20,3 +20,7 @@ Thumbs.db
 .bin/
 work/parts/*.orig.json
 work/cli-state.json
+
+# 扩展测试用例生成缓存 + 云端登录态（绝不提交）
+work/extended/
+work/leetcode-config.json
