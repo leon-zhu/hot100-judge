@@ -28,26 +28,38 @@ function seededRandom(seed) {
 
 // ---- #1 两数之和：暴力 oracle + 手写边界 + 带种子随机 ----
 function twoSumBrute(args) {
-  // 与参考题解一致的确定性扫描：记录每个值最后一次出现的下标，
-  // 遇到首个可配对下标即返回。重复值/多解时与单次扫描参考题解输出严格一致，
-  // 避免生成用例的期望值出现多解歧义（无假阳性）。
   const [nums, target] = args;
-  const last = new Map();
-  for (let j = 0; j < nums.length; j++) {
-    const comp = target - nums[j];
-    if (last.has(comp)) return [last.get(comp), j];
-    last.set(nums[j], j);
+  for (let i = 0; i < nums.length; i++) {
+    for (let j = i + 1; j < nums.length; j++) {
+      if (nums[i] + nums[j] === target) return [i, j];
+    }
   }
   return []; // 无解约定返回空数组
 }
 function twoSumRandom(rand) {
-  const n = 2 + Math.floor(rand() * 29); // 2..30
-  const nums = [];
-  for (let i = 0; i < n; i++) nums.push(Math.floor(rand() * 101) - 50); // -50..50
-  const a = Math.floor(rand() * n);
-  let b = Math.floor(rand() * n);
-  while (b === a) b = Math.floor(rand() * n);
-  return [nums, nums[a] + nums[b]]; // 保证有解
+  // 保证唯一解：多解输入会让"正确但返回不同合法对"的解法被判错（假失败）
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const n = 2 + Math.floor(rand() * 29); // 2..30
+    const nums = [];
+    for (let i = 0; i < n; i++) nums.push(Math.floor(rand() * 101) - 50); // -50..50
+    const a = Math.floor(rand() * n);
+    let b = Math.floor(rand() * n);
+    while (b === a) b = Math.floor(rand() * n);
+    const target = nums[a] + nums[b];
+    let cnt = 0;
+    outer:
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (nums[i] + nums[j] === target) {
+          cnt++;
+          if (cnt > 1) break outer;
+        }
+      }
+    }
+    if (cnt === 1) return [nums, target];
+  }
+  // 兜底（几乎不可达）：返回一个已知唯一解用例
+  return [[-3, 4, 3, 90], 0];
 }
 
 // ---- #3 无重复字符的最长子串：暴力 oracle + 手写边界 + 穷举 ----
@@ -80,7 +92,7 @@ const registry = {
       [[3, 2, 4], 6],
       [[3, 3], 6],
       [[-3, 4, 3, 90], 0],
-      [[1, 1, 1, 1], 2],
+      [[1, 1], 2],
       [[0, 4, 3, 0], 0],
       [[-10, -1, -18, -19], -20],
     ],
