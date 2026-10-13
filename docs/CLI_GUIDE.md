@@ -267,7 +267,7 @@ hot100 random --unfinished
 Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt install default-jdk`（Debian/Ubuntu）。
 
 **Q2：C++ 评测在本机编译报 `bits/stdc++.h` 找不到？**
-本仓库 C++ 驱动使用 `bits/stdc++.h`，部分 macOS 的 clang 环境缺 libstdc++ 头。这是既有环境问题，GitHub Actions 的 g++ 环境可正常跑；macOS 用户建议用 Java / Python 评测，或安装真正的 g++（`brew install gcc` 后用 `g++-14`）。
+本仓库 C++ 驱动使用 `bits/stdc++.h`，部分 macOS 的 clang 环境缺 libstdc++ 头。评测器会自动优先使用 Homebrew 安装的真实 GNU g++（`g++-16`→`g++-11`，如 `brew install gcc`），找不到时才回退到系统默认 `g++`；GitHub Actions 的 g++ 环境可正常跑。
 
 **Q3：评测失败但我的答案看起来对？**
 检查：方法/类签名是否与 `show` 输出完全一致（参数类型、返回类型）；核心代码模式不要写 `main`；变量名冲突。必要时用 `hot100 show <id>` 对比签名，或 `hot100 show <id> --explain` 参考题解。

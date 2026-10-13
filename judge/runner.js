@@ -15,9 +15,20 @@ const MAX_OUTPUT = 64 * 1024;      // stdout/stderr 各自上限
 
 function commandExists(command) {
   return new Promise((resolve) => {
-    execFile('sh', ['-lc', `command -v ${command}`], (error, stdout) => {
-      resolve(error ? null : stdout.trim());
-    });
+    // Homebrew gcc 公式只提供 g++-N / gcc-N 别名；macOS 默认 g++ 是 clang，
+    // 缺失 GNU 头文件库，导致 #include <bits/stdc++.h> 找不到。
+    // 解析编译器时优先选真实 GNU 编译器（版本 16→11 从高到低），再回退到裸命令。
+    const candidates = command === 'g++' || command === 'gcc'
+      ? Array.from({ length: 6 }, (_, i) => `${command}-${16 - i}`).concat(command)
+      : [command];
+    const tryNext = (i) => {
+      if (i >= candidates.length) return resolve(null);
+      execFile('sh', ['-lc', `command -v ${candidates[i]}`], (error, stdout) => {
+        if (error || !stdout.trim()) return tryNext(i + 1);
+        resolve(stdout.trim());
+      });
+    };
+    tryNext(0);
   });
 }
 
