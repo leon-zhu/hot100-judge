@@ -364,7 +364,9 @@ function renderSolution() {
   const problem = currentProblem();
   if (!problem) return;
   const sol = state.solutions[problem.id];
-  const langs = ['python3', 'cpp'];
+  // 参考题解展示语言：Python3 与 Java（Java 为核心代码模式，无 ACM 段）
+  const langs = ['python3', 'java'];
+  const solLabel = (l) => ({ python3: 'Python3', java: 'Java' }[l] || (LANG[l] && LANG[l].label) || l);
   const has = langs.filter((l) => sol && sol[l]);
   if (!has.length) {
     $('solutionLangTabs').innerHTML = '';
@@ -373,7 +375,7 @@ function renderSolution() {
   }
   if (!has.includes(state.solutionLang)) state.solutionLang = has[0];
   $('solutionLangTabs').innerHTML = has.map((l) =>
-    `<button class="${l === state.solutionLang ? 'active' : ''}" data-sol-lang="${l}" type="button">${LANG[l].label}</button>`).join('');
+    `<button class="${l === state.solutionLang ? 'active' : ''}" data-sol-lang="${l}" type="button">${solLabel(l)}</button>`).join('');
 
   const entry = sol[state.solutionLang];
   const blocks = [];

@@ -161,9 +161,9 @@ function cmdShow(flags, positional) {
       console.log(`\n参考题解 · Python3（核心代码模式）:`);
       console.log(sol.python3.core);
     }
-    if (sol && sol.cpp && sol.cpp.core) {
-      console.log(`\n参考题解 · C++（核心代码模式）:`);
-      console.log(sol.cpp.core);
+    if (sol && sol.java && sol.java.core) {
+      console.log(`\n参考题解 · Java（核心代码模式）:`);
+      console.log(sol.java.core);
     }
   } else {
     console.log(`\n提示: 加 --explain 查看解题思路与参考题解`);
@@ -314,7 +314,7 @@ function usage(code = 1) {
   show <题号> [--explain]      题目详情（描述/核心签名/ACM/CodeTop 高频）
       加 --explain 追加解题思路与参考题解
       示例: hot100 show 1            # 只看题目信息
-           hot100 show 1 --explain   # 附带解题思路与双语言参考题解
+           hot100 show 1 --explain   # 附带解题思路与 Python3/Java 参考题解
 
   search <关键词>               按标题/描述/专题搜索
       示例: hot100 search 最长

@@ -6,7 +6,7 @@
 |---|---|---|
 | `work/parts/problems-<组名>.json` | 10 个题目对象数组 | 数组 |
 | `work/parts/tests-<组名>.json` | 测试用例 | 对象，键为题目 id（字符串） |
-| `work/parts/solutions-<组名>.json` | 参考题解 | 对象，键为题目 id（字符串） |
+| `work/parts/solutions-<组名>.json` | 参考题解 | 对象，键为题目 id（字符串）；含 python3/cpp（core+acm）与 java（core） |
 
 参考完整示例：`work/example-full.json`（含 1/206/94/146 四题全字段示例）与 `work/examples/` 下的三个示例分片（已通过验证）。
 写完后运行 `node scripts/verify-parts.js <组名>`，**直到输出"✅ 全部通过"** 再结束。
@@ -170,9 +170,19 @@
 }
 ```
 
-- `core`：核心函数/类实现，Python 为函数（ops 为类），C++ 为 `class Solution { ... };`（ops 为真实类名）。
-- `acm`：完整可运行程序，从 stdin 读、向 stdout 写，**解析必须与 acm.input 规格一致，输出必须与 acm.output 规格一致**（每行输出以 `\n` 结尾）。
-- C++ 不得定义 ListNode/TreeNode/Node（环境提供）；可用 `#include <bits/stdc++.h>`。
+- `core`：核心函数/类实现，Python 为函数（ops 为类），C++ 为 `class Solution { ... };`，Java 为 `class Solution { ... }`（ops 均为真实类名）。
+- `acm`：完整可运行程序，从 stdin 读、向 stdout 写，**解析必须与 acm.input 规格一致，输出必须与 acm.output 规格一致**（每行输出以 `\n` 结尾）。Java 不支持 ACM 模式，无 `acm` 字段。
+- 题解结构：`python3`/`cpp` 含 `core` 与 `acm` 两套；`java` 仅含 `core`（核心代码模式）。示例如下：
+
+```json
+"1": {
+  "python3": { "core": "...", "acm": "..." },
+  "cpp": { "core": "...", "acm": "..." },
+  "java": { "core": "import java.util.*;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) { ... }\n}\n" }
+}
+```
+
+- C++ 不得定义 ListNode/TreeNode/Node（环境提供）；可用 `#include <bits/stdc++.h>`。Java 同样不得定义 ListNode/TreeNode/Node（由评测驱动提供），可 `import java.util.*;`。
 - 算法应为主流最优解（哈希/双指针/DP/回溯等），代码加少量注释说明思路更佳。
 
 ---
@@ -189,7 +199,7 @@ node scripts/verify-parts.js <组名>
 1. 检查结构完整性（desc、acm 规格/样例/模板、core 模板、ops 元数据）。
 2. 用 **你的 python3 题解**跑 ACM 用例（真实 stdin/stdout 对比，含浮点容差）。
 3. 用 **你的 cpp 题解**跑 ACM 用例（真实 g++ 编译运行）。
-4. 用 **你的 python3/cpp 核心题解**跑 core 用例（驱动注入：构建链表/树/矩阵等并对比）。
+4. 用 **你的 python3/cpp/java 核心题解**跑 core 用例（驱动注入：构建链表/树/矩阵等并对比）。
 
 **必须修到 ✅ 全部通过**。常见失败原因：ACM 解析与规格不一致、expected 手算错误（请改为运行题解得到）、链表/树记号写错、C++ 模板没加 `;` 结尾、题目答案顺序不唯一。
 

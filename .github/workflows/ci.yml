@@ -34,18 +34,18 @@ jobs:
             const s = require('./public/data/solutions.json');
             const missP = p.filter(x => !x.core || !x.explain);
             const missT = p.filter(x => !t[x.id] || !t[x.id].acm || !t[x.id].core);
-            const missS = p.filter(x => !s[x.id] || !s[x.id].python3 || !s[x.id].cpp);
+            const missS = p.filter(x => !s[x.id] || !s[x.id].python3 || !s[x.id].cpp || !s[x.id].java);
             if (missP.length || missT.length || missS.length) {
               console.error('数据不完整', missP.map(x=>x.id), missT.map(x=>x.id), missS.map(x=>x.id));
               process.exit(1);
             }
-            console.log('✅ 100 题数据完整（core/explain/测试用例/题解）');
+            console.log('✅ 100 题数据完整（core/explain/测试用例/题解含 java）');
           "
 
-      - name: 全量题解验证（100 题 × ACM/核心 × Python3/C++，真实编译运行）
+      - name: 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java，真实编译运行）
         run: node scripts/verify-parts.js all
 
-      - name: Java 驱动验证（100 题桩冒烟 + 13 份参考题解）
+      - name: Java 驱动验证（100 题桩冒烟 + 100 份参考题解）
         run: node scripts/verify-java.js
 
       - name: 前端语法检查

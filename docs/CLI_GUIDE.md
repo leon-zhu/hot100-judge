@@ -77,7 +77,7 @@ hot100 list --sort rank --company 腾讯 --difficulty 中等 --top 20
 
 ```bash
 hot100 show 1                  # 题目信息：描述 / 核心签名 / ACM 输入输出 / CodeTop 高频
-hot100 show 1 --explain        # 在上面的基础上追加：解题思路 + Python3/C++ 参考题解
+hot100 show 1 --explain        # 在上面的基础上追加：解题思路 + Python3/Java 参考题解
 hot100 show 146                # ops 型题（LRU）显示类签名
 ```
 
@@ -226,8 +226,8 @@ judge/
   judge.js           # 评测逻辑（ACM / 核心代码）
   runner.js          # 进程执行与资源限制
 scripts/
-  verify-java.js     # Java 驱动验证（100 题桩冒烟 + 13 份参考题解）
-  java-ref/          # Java 参考题解（驱动正确性验证用）
+  verify-java.js     # Java 驱动验证（100 题桩冒烟 + 100 份参考题解）
+  java-ref/          # Java 参考题解（驱动正确性验证用，全 100 题）
   ...                # 数据构建 / 抓取 / 端到端测试等脚本
 public/data/         # 题库 / 用例 / 题解（JSON，离线）
 ```
@@ -283,9 +283,9 @@ Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt insta
 ## 10. 验证与测试
 
 ```bash
-node scripts/verify-java.js        # Java 驱动验证：100 题桩冒烟 + 13 份参考题解（全绿）
+node scripts/verify-java.js        # Java 驱动验证：100 题桩冒烟 + 100 份参考题解（全绿）
 node scripts/test-judge.js         # 驱动生成自测
-node scripts/verify-parts.js all   # 全量题解验证（100 题 × ACM/核心 × Python3/C++）
+node scripts/verify-parts.js all   # 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java）
 ```
 
 CI（GitHub Actions）在每次 push 时自动运行上述验证。

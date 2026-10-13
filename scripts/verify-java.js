@@ -66,6 +66,7 @@ async function main() {
   const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.java')) : [];
   for (const f of files) {
     const id = Number(f.replace('.java', ''));
+    if (only && String(id) !== only) continue; // only 模式下只验证指定题号
     const prob = problems.find((p) => p.id === id);
     if (!prob) { console.error(`✗ 参考题解 ${id}: 题库中无此题`); pass = false; continue; }
     const code = fs.readFileSync(path.join(dir, f), 'utf8');

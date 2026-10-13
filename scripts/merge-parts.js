@@ -4,7 +4,7 @@
  * 合并 work/parts/ 下的数据分片为最终数据文件：
  *   problems-*.json  → public/data/problems.json（按 id 排序的数组）
  *   tests-*.json     → public/data/tests.json（id → {acm, core}）
- *   solutions-*.json → public/data/solutions.json（id → {python3:{core,acm}, cpp:{core,acm}}）
+ *   solutions-*.json → public/data/solutions.json（id → {python3:{core,acm}, cpp:{core,acm}, java:{core}}）
  */
 const fs = require('fs');
 const path = require('path');

@@ -69,6 +69,14 @@ async function verifyOne(problem, tests, solutions) {
       detail: r.error || r.results.filter((x) => !x.ok).map((x) => JSON.stringify({ args: x.args, expected: x.expected, got: x.got, err: x.error }).slice(0, 260)).slice(0, 2).join(' | '),
     });
   }
+  if (problem.core && sol.java && sol.java.core && t.core && t.core.length) {
+    const r = await withRetry(() => judgeCore({ language: 'java', code: sol.java.core, core: problem.core, tests: t.core }));
+    report.checks.push({
+      name: 'core java',
+      pass: !r.error && r.results.every((x) => x.ok),
+      detail: r.error || r.results.filter((x) => !x.ok).map((x) => JSON.stringify({ args: x.args, expected: x.expected, got: x.got, err: x.error }).slice(0, 260)).slice(0, 2).join(' | '),
+    });
+  }
 
   // 结构校验
   const problems = [];
@@ -86,7 +94,7 @@ async function verifyOne(problem, tests, solutions) {
   if (!t.core || t.core.length < 3) problems.push(`core 用例 ${t.core ? t.core.length : 0} 组（要求 ≥3）`);
   if (t.acm && t.acm.some((c) => typeof c.input !== 'string' || typeof c.output !== 'string')) problems.push('acm 用例格式错误');
   if (t.core && t.core.some((c) => !Array.isArray(c.args))) problems.push('core 用例缺少 args 数组');
-  if (sol && (!sol.python3 || !sol.cpp)) problems.push('题解缺语言（需 python3 与 cpp）');
+  if (sol && (!sol.python3 || !sol.cpp || !sol.java)) problems.push('题解缺语言（需 python3、cpp 与 java）');
   if (sol && sol.python3 && (!sol.python3.core || !sol.python3.acm)) problems.push('python3 题解缺 core/acm');
   if (sol && sol.cpp && (!sol.cpp.core || !sol.cpp.acm)) problems.push('cpp 题解缺 core/acm');
   report.structural = problems;

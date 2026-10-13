@@ -4,7 +4,7 @@
 
 **本地运行的 LeetCode Hot 100 刷题工作台 · 面试备战神器**
 
-> 双模式评测（ACM + 核心代码）｜ 100 题完整题库 ｜ 400 份带注释参考题解 ｜ CodeTop 高频/公司数据
+> 双模式评测（ACM + 核心代码）｜ 100 题完整题库 ｜ 500 份带注释参考题解 ｜ CodeTop 高频/公司数据
 > 面向秋招、春招、实习 —— 刷题不闭门造车，直击大厂高频考点
 
 [![GitHub stars](https://img.shields.io/github/stars/Hubert-hwk/hot100-judge?style=for-the-badge&logo=github&color=ffd166)](https://github.com/Hubert-hwk/hot100-judge/stargazers)
@@ -77,7 +77,7 @@ npm start
 |---|---|
 | 题目（Hot 100 全量） | 100 |
 | ACM + 核心代码测试用例 | **959 组** |
-| 参考题解（Python3/C++ × 核心/ACM） | **400 份**，全部带中文注释 |
+| 参考题解（Python3/C++ × 核心/ACM + Java × 核心） | **500 份**，全部带中文注释 |
 | 解题思路讲解 | 100/100 题 |
 
 ### 🛠 工程体验

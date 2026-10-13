@@ -1,16 +1,21 @@
-// Hot100 #54 螺旋矩阵（中等）· 模拟
+// Hot100 #54 螺旋矩阵（中等）· 矩阵
 import java.util.*;
 
 class Solution {
-    public int[] spiralOrder(int[][] m) {
+    public int[] spiralOrder(int[][] matrix) {
+        // 核心思路：用边界收缩法按上、右、下、左四条边逐圈读取元素。
+        // 关键步骤：每圈走完上、右两边后检查区域是否仍有效再走下面两边，
+        // 否则单行或单列场景会重复读取元素。
+        // 复杂度：时间 O(mn)，空间 O(1)（不计返回数组）。
         List<Integer> r = new ArrayList<>();
-        int t = 0, b = m.length - 1, l = 0, rr = m[0].length - 1;
-        while (t <= b && l <= rr) {
-            for (int j = l; j <= rr; j++) r.add(m[t][j]);
-            for (int i = t + 1; i <= b; i++) r.add(m[i][rr]);
-            if (t < b) for (int j = rr - 1; j >= l; j--) r.add(m[b][j]);
-            if (l < rr) for (int i = b - 1; i > t; i--) r.add(m[i][l]);
-            t++; b--; l++; rr--;
+        int m = matrix.length, n = matrix[0].length;
+        int top = 0, bottom = m - 1, left = 0, right = n - 1;
+        while (top <= bottom && left <= right) {
+            for (int j = left; j <= right; j++) r.add(matrix[top][j]);
+            for (int i = top + 1; i <= bottom; i++) r.add(matrix[i][right]);
+            if (top < bottom) for (int j = right - 1; j >= left; j--) r.add(matrix[bottom][j]);
+            if (left < right) for (int i = bottom - 1; i > top; i--) r.add(matrix[i][left]);
+            top++; bottom--; left++; right--;
         }
         int[] out = new int[r.size()];
         for (int i = 0; i < r.size(); i++) out[i] = r.get(i);

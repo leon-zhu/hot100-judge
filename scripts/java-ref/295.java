@@ -1,4 +1,4 @@
-// Hot100 #295 数据流的中位数（困难）· 对顶堆
+// Hot100 #295 数据流的中位数（困难）· 堆/设计
 import java.util.*;
 
 class MedianFinder {
