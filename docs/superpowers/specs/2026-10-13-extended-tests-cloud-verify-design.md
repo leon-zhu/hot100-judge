@@ -50,7 +50,7 @@ registry[3] = {
 3. 最后加带种子随机输入（mulberry32，规模到几百）
 4. 每个输入用 `oracle` 算 expected；oracle 抛错/无结果则跳过该例
 5. 可选交叉验证：对抽样用例，用现有 python3 参考题解跑一遍，与暴力 oracle 不一致则告警（提示参考题解本身有误）
-6. 上限控制（core ≤ 60 例），写入 `work/extended/tests-<id>.json`
+6. 上限控制（core ≤ 100（MAX_CASES）例），写入 `work/extended/tests-<id>.json`
 
 输出 schema 与现有 core 用例逐字段一致（`{args, expected}`），判题内核零改动。
 

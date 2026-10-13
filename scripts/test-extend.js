@@ -45,6 +45,7 @@ async function main() {
   const p3 = problem(3);
   const cases3 = generateExtendedTests(3).core;
   check('生成非空', cases3.length > 0, `(${cases3.length})`);
+  check('达上限 100', cases3.length === 100, `(${cases3.length})`);
   const argOf = (s) => cases3.filter((c) => c.args[0] === s);
   check('含 abba', argOf('abba').length > 0);
   check('含 tmmzuxt', argOf('tmmzuxt').length > 0);
@@ -66,6 +67,7 @@ async function main() {
   const p1 = problem(1);
   const cases1 = generateExtendedTests(1).core;
   check('生成非空', cases1.length > 0, `(${cases1.length})`);
+  check('不超上限', cases1.length <= 100, `(${cases1.length})`);
   const r1 = await judgeCore({ language: 'python3', code: refPy(1), core: p1.core, tests: cases1 });
   check('python3 参考全过', !r1.error && r1.results.every((x) => x.ok), r1.error || '');
 

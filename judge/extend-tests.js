@@ -44,7 +44,7 @@ function twoSumRandom(rand) {
     for (let i = 0; i < n; i++) nums.push(Math.floor(rand() * 101) - 50); // -50..50
     const a = Math.floor(rand() * n);
     let b = Math.floor(rand() * n);
-    while (b === a) b = Math.floor(rand() * n);
+    for (let k = 0; k < 8 && b === a; k++) b = Math.floor(rand() * n);
     const target = nums[a] + nums[b];
     let cnt = 0;
     outer:
@@ -59,11 +59,11 @@ function twoSumRandom(rand) {
     if (cnt === 1) return [nums, target];
   }
   // 兜底（几乎不可达）：返回一个已知唯一解用例
-  return [[-3, 4, 3, 90], 0];
+  return [[-7, 5, 2, 10], -2];
 }
 
 // ---- #3 无重复字符的最长子串：暴力 oracle + 手写边界 + 穷举 ----
-function llsBrute(s) {
+function lswrcBrute(s) {
   let best = 0;
   for (let i = 0; i < s.length; i++) {
     const seen = new Set();
@@ -75,7 +75,7 @@ function llsBrute(s) {
   }
   return best;
 }
-function llsRandom(rand) {
+function lswrcRandom(rand) {
   const len = Math.floor(rand() * 121); // 0..120
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let s = '';
@@ -99,32 +99,37 @@ const registry = {
     randomCount: 30,
   },
   3: {
-    oracle: (args) => llsBrute(args[0]),
-    genRandom: (rand) => llsRandom(rand),
+    oracle: (args) => lswrcBrute(args[0]),
+    genRandom: (rand) => lswrcRandom(rand),
     curated: [
       ['abba'], ['tmmzuxt'], ['abcbda'], ['bbtablud'], ['anviaj'], ['dvdf'],
       ['au'], [''], ['bbbbb'], ['abcabcbb'], ['pwwkew'], ['abab'],
       ['aaaaaaaaaabbbbbbbbbbcccccccccc'], ['abcd'],
       ['abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'],
     ],
-    exhaustive: { alphabet: 'ab', maxLen: 6 },
+    exhaustive: { alphabet: 'ab', maxLen: 5 },
+    randomCount: 30,
   },
 };
 
 function computeExpected(id, args) {
   const entry = registry[id];
   if (!entry) return undefined;
-  const r = entry.oracle(args);
-  return r === undefined ? undefined : r;
+  return entry.oracle(args);
 }
 
 /** 确定性顺序生成：手写边界 → 穷举小空间 → 带种子随机，总量 ≤ MAX_CASES。 */
 function buildCases(id) {
+  id = String(id);
   const entry = registry[id];
   if (!entry) return [];
   const cases = [];
+  const seen = new Set();
   const push = (args) => {
     if (cases.length >= MAX_CASES) return;
+    const key = JSON.stringify(args);
+    if (seen.has(key)) return;
+    seen.add(key);
     const expected = computeExpected(id, args);
     if (expected === undefined) return;
     cases.push({ args, expected });
@@ -151,16 +156,19 @@ function buildCases(id) {
 }
 
 function extendedCachePath(id) {
+  id = String(id);
   return path.join(EXT_DIR, `tests-${id}.json`);
 }
 
 function loadExtendedTests(id) {
+  id = String(id);
   try {
     return JSON.parse(fs.readFileSync(extendedCachePath(id), 'utf8'));
   } catch { return null; }
 }
 
 function generateExtendedTests(id) {
+  id = String(id);
   const cases = buildCases(id);
   const data = { problemId: id, seed: SEED, generatedAt: new Date().toISOString(), core: cases, acm: [] };
   fs.mkdirSync(EXT_DIR, { recursive: true });
