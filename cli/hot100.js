@@ -229,7 +229,7 @@ async function cmdJudge(flags, positional) {
     let cache = flags.regenerate ? null : loadExtendedTests(String(p.id));
     if (!cache) {
       cache = generateExtendedTests(String(p.id));
-      if (cache.core.length) console.log(`已生成 ${cache.core.length} 个扩展用例（work/extended/tests-${p.id}.json）`);
+      if ((cache.core || []).length) console.log(`已生成 ${cache.core.length} 个扩展用例（work/extended/tests-${p.id}.json）`);
     }
     extended = cache.core || [];
     hasExt = extended.length > 0;
@@ -281,14 +281,18 @@ async function cmdJudge(flags, positional) {
     if (!useCore) {
       console.warn('  云端判定仅支持核心代码模式（--mode core），已跳过');
     } else {
-      const { submitToLeetCode } = require(path.join(ROOT, 'judge', 'leetcode-submit'));
-      const verdict = await submitToLeetCode({ problem: p, code, lang });
-      if (verdict.error) {
-        console.warn(`  ⚠ 云端判定失败: ${verdict.error}`);
-      } else {
-        const mark = verdict.accepted ? '✅' : '❌';
-        console.log(`  ${mark} LeetCode: ${verdict.statusMsg}`);
-        if (verdict.detail) console.log(`     ${verdict.detail}`);
+      try {
+        const { submitToLeetCode } = require(path.join(ROOT, 'judge', 'leetcode-submit'));
+        const verdict = await submitToLeetCode({ problem: p, code, lang });
+        if (verdict.error) {
+          console.warn(`  ⚠ 云端判定失败: ${verdict.error}`);
+        } else {
+          const mark = verdict.accepted ? '✅' : '❌';
+          console.log(`  ${mark} LeetCode: ${verdict.statusMsg}`);
+          if (verdict.detail) console.log(`     ${verdict.detail}`);
+        }
+      } catch (e) {
+        console.warn(`  ⚠ 云端判定不可用: ${e.message}`);
       }
     }
   }
@@ -377,6 +381,7 @@ function usage(code = 1) {
       通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际（标注内置/扩展）
       --cloud       本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie）
       --no-extend   只用内置用例
+      --regenerate  强制重建扩展用例缓存
       示例: hot100 judge 1 sol-1.java
            hot100 judge 3 sol-3.java --cloud
 
