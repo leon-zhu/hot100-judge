@@ -132,6 +132,9 @@ hot100 judge 20 sol.py --mode acm      # ACM 模式（完整程序，读 stdin �
 | `--lang <语言>` | `java` / `python3` / `cpp`；默认按扩展名推断（`.java`→java、`.py`→python3、`.cpp`→cpp） |
 | `--mode core` | 核心代码模式（默认）——只写函数/类 |
 | `--mode acm` | ACM 模式——写完整程序 |
+| `--cloud` | 本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie） |
+| `--regenerate` | 强制重建扩展用例缓存 |
+| `--no-extend` | 只用内置用例，不合并扩展用例 |
 
 **语言支持矩阵**
 
@@ -164,6 +167,30 @@ $ hot100 judge 1 scripts/java-ref/1.java
 - `✗ 运行超时`：算法复杂度过高（CPU 5s / 内存 512MB 限制）
 - `✗ 文件不存在: xxx`：路径写错
 - `✗ 题目不存在: 999`：题号超范围（1-100）
+
+### 4.3 扩展测试用例（judge 自动合并）
+
+内置用例每题仅 4~6 组，覆盖很薄。`hot100 judge` 会**自动合并本地扩展用例**：
+
+- 首次判题时为该题生成最多 100 个扩展用例（手写边界 + 穷举小空间 + 带种子随机），缓存在 `work/extended/tests-<id>.json`（已 gitignore）
+- 之后判题自动复用缓存；`--regenerate` 强制重建；`--no-extend` 只用内置用例
+- 失败用例会标注「内置」/「扩展」，方便定位
+
+当前已支持扩展用例的题目：#1 两数之和、#3 无重复字符的最长子串。想扩更多题，在 `judge/extend-tests.js` 的 `registry` 里加 oracle / curated / genRandom 即可。
+
+### 4.4 `--cloud` 云端判定（可选，需登录态）
+
+本地判题通过后，可用 `--cloud` 把代码提交到 leetcode.cn 拿官方判定（覆盖隐藏全量用例，能进一步确认本地扩展用例没漏掉的边界）：
+
+1. 浏览器登录 https://leetcode.cn ，打开开发者工具（Network 或 Application/Cookies）取两个 cookie：
+   - `LEETCODE_SESSION`
+   - `csrftoken`
+2. 二选一提供登录态（敏感信息，绝不提交进 git）：
+   - 环境变量：`LEETCODE_SESSION=xxx LEETCODE_CSRF_TOKEN=yyy hot100 judge 3 sol-3.java --cloud`
+   - 配置文件：`work/leetcode-config.json` 写入 `{ "session": "xxx", "csrf": "yyy" }` 并 `chmod 600`
+3. 运行 `hot100 judge <题号> <文件> --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例与期望。
+
+云端任何失败（未配置登录态 / 登录态失效 / 网络 / 超时）只会打印 `⚠` 告警，**不影响本地判题结果与退出码**。
 
 ---
 
@@ -221,6 +248,8 @@ hot100 progress
 cli/
   hot100.js          # CLI 主程序（零依赖单文件）
 judge/
+  extend-tests.js      # ★ 扩展测试用例生成器（oracle 注册表）
+  leetcode-submit.js   # 云端提交（--cloud，需登录态 cookie）
   java-driver.js     # ★ Java 核心代码模式驱动生成器
   core-driver.js     # Python/C++ 驱动生成器 + 导出 Java 驱动
   judge.js           # 评测逻辑（ACM / 核心代码）
@@ -286,6 +315,7 @@ Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt insta
 node scripts/verify-java.js        # Java 驱动验证：100 题桩冒烟 + 100 份参考题解（全绿）
 node scripts/test-judge.js         # 驱动生成自测
 node scripts/verify-parts.js all   # 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java）
+node scripts/test-extend.js        # 扩展用例生成器测试（含 sol-3 回归）
 ```
 
 CI（GitHub Actions）在每次 push 时自动运行上述验证。
