@@ -172,11 +172,17 @@ $ hot100 judge 1 scripts/java-ref/1.java
 
 内置用例每题仅 4~6 组，覆盖很薄。`hot100 judge` 会**自动合并本地扩展用例**：
 
-- 首次判题时为该题生成最多 100 个扩展用例（手写边界 + 穷举小空间 + 带种子随机），缓存在 `work/extended/tests-<id>.json`（已 gitignore）
+- 首次判题时为该题生成最多 100 个扩展用例，缓存在 `work/extended/tests-<id>.json`（已 gitignore）
 - 之后判题自动复用缓存；`--regenerate` 强制重建；`--no-extend` 只用内置用例
 - 失败用例会标注「内置」/「扩展」，方便定位
 
-当前已支持扩展用例的题目：#1 两数之和、#3 无重复字符的最长子串。想扩更多题，在 `judge/extend-tests.js` 的 `registry` 里加 oracle / curated / genRandom 即可。
+**全部 100 题均已支持**（含链表 / 树 / 矩阵 / ops 类设计题）。生成流程：
+
+1. **输入生成**：按 `core.params` 类型驱动随机生成；能从内置用例自动推导取值/长度/有序/互异等约束，特殊题（#1 需保证唯一解、#105 前序中序须同源、#215 需 k≤n 等）在 `judge/gen/spec.js` 用 override 声明。
+2. **期望值**：直接用题库自带 **python3 参考题解**跑出结果作为 `expected`，无需手写 oracle；参考题解抛异常的用例（非法输入）自动丢弃。
+3. **自检**：参考题解若连内置用例都过不了，则放弃该题扩展（`refUnusable`）。
+
+校验：`node scripts/verify-extend-all.js` 会用 **Python3/C++/Java 三份参考题解**各跑一遍全部扩展用例，确保不会误伤正确解。
 
 ### 4.4 `--cloud` 云端判定（可选，需登录态）
 
@@ -248,7 +254,10 @@ hot100 progress
 cli/
   hot100.js          # CLI 主程序（零依赖单文件）
 judge/
-  extend-tests.js      # ★ 扩展测试用例生成器（oracle 注册表）
+  extend-tests.js      # ★ 扩展用例编排（生成候选 → 求期望值 → 落缓存）
+  gen/inputs.js        # ★ 类型驱动输入生成器 + 约束 flag + 从内置用例自动推导
+  gen/oracle.js        # ★ 参考题解 oracle（跑 python3 题解取期望值 + 自检）
+  gen/spec.js          # ★ 逐题 override（#1 唯一解、#105 前序中序、#146 容量等）
   leetcode-submit.js   # 云端提交（--cloud，需登录态 cookie）
   java-driver.js     # ★ Java 核心代码模式驱动生成器
   core-driver.js     # Python/C++ 驱动生成器 + 导出 Java 驱动
@@ -315,7 +324,8 @@ Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt insta
 node scripts/verify-java.js        # Java 驱动验证：100 题桩冒烟 + 100 份参考题解（全绿）
 node scripts/test-judge.js         # 驱动生成自测
 node scripts/verify-parts.js all   # 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java）
-node scripts/test-extend.js        # 扩展用例生成器测试（含 sol-3 回归）
+node scripts/test-extend.js        # 扩展用例生成器测试（含 sol-3 / LRU 回归）
+node scripts/verify-extend-all.js  # 全量扩展用例验证（100 题 × Python3/C++/Java 参考题解全过）
 ```
 
 CI（GitHub Actions）在每次 push 时自动运行上述验证。

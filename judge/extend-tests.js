@@ -1,158 +1,129 @@
 'use strict';
 
 /**
- * 扩展测试用例生成器：
- *   - oracle 注册表：按题号定义 暴力 oracle / 随机输入生成器 / 手写边界 / 穷举空间
- *   - 生成 → work/extended/tests-<id>.json（gitignore，可 --regenerate 重建）
- * MVP 只支持 core 模式，且参数/返回类型为 int/string/int[]/int[][]/bool/string[]
- * （驱动可直接 JSON 序列化对比）。链表/树/grid 等带记号类型暂不纳入。
+ * 扩展测试用例编排层：
+ *   resolveSpec(自动推导 + 手写 override) → 生成候选输入 → 参考题解 oracle 求期望值
+ *   → 丢弃非法用例 / 去重 / 裁剪 → work/extended/tests-<id>.json（gitignore，可 --regenerate 重建）
+ *
+ * 期望值来源：题库自带 python3 参考题解（见 judge/gen/oracle.js）。参考题解抛异常的用例被丢弃。
  */
 const fs = require('fs');
 const path = require('path');
+const { resolveSpec } = require('./gen/spec');
+const { seededRandom, genValue, genOps } = require('./gen/inputs');
+const { runReference, verifyReference } = require('./gen/oracle');
 
 const ROOT = path.join(__dirname, '..');
+const DATA_DIR = path.join(ROOT, 'public', 'data');
 const EXT_DIR = path.join(ROOT, 'work', 'extended');
 const SEED = 20261013;
 const MAX_CASES = 100;
+const TARGET_CASES = 40;
+const MAX_ROUNDS = 12;
 
-/** 带种子的确定性 PRNG（mulberry32）。 */
-function seededRandom(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+let _data = null;
+function data() {
+  if (!_data) {
+    _data = {
+      problems: JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'problems.json'), 'utf8')),
+      solutions: JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'solutions.json'), 'utf8')),
+      tests: JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'tests.json'), 'utf8')),
+    };
+  }
+  return _data;
+}
+
+/** 每题独立种子，避免跨题序列相关。 */
+function seedFor(id) { return (SEED ^ (Number(id) * 2654435761)) >>> 0; }
+
+/**
+ * 批量跑参考题解；整批失败（如某用例死循环触发 CPU 限）时二分重试，
+ * 避免单个坏用例拖垮整批。返回与 batch 等长、按序对齐的结果。
+ */
+async function runBatchRobust(core, ref, kind, batch) {
+  if (!batch.length) return [];
+  const { fatal, results } = await runReference({ core, refCode: ref, kind, candidates: batch });
+  if (!fatal) return results;
+  if (batch.length === 1) return [{ valid: false }];
+  const mid = Math.floor(batch.length / 2);
+  const a = await runBatchRobust(core, ref, kind, batch.slice(0, mid));
+  const b = await runBatchRobust(core, ref, kind, batch.slice(mid));
+  return [...a, ...b];
+}
+
+function exhaustiveStrings(alphabet, maxLen) {
+  const out = [];
+  const rec = (prefix, len) => {
+    if (len === 0) { out.push(prefix); return; }
+    for (const ch of alphabet) rec(prefix + ch, len - 1);
   };
+  for (let len = 0; len <= maxLen; len++) rec('', len);
+  return out;
 }
 
-// ---- #1 两数之和：暴力 oracle + 手写边界 + 带种子随机 ----
-function twoSumBrute(args) {
-  const [nums, target] = args;
-  for (let i = 0; i < nums.length; i++) {
-    for (let j = i + 1; j < nums.length; j++) {
-      if (nums[i] + nums[j] === target) return [i, j];
-    }
-  }
-  return []; // 无解约定返回空数组
-}
-function twoSumRandom(rand) {
-  // 保证唯一解：多解输入会让"正确但返回不同合法对"的解法被判错（假失败）
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const n = 2 + Math.floor(rand() * 29); // 2..30
-    const nums = [];
-    for (let i = 0; i < n; i++) nums.push(Math.floor(rand() * 101) - 50); // -50..50
-    const a = Math.floor(rand() * n);
-    let b = Math.floor(rand() * n);
-    for (let k = 0; k < 8 && b === a; k++) b = Math.floor(rand() * n);
-    const target = nums[a] + nums[b];
-    let cnt = 0;
-    outer:
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        if (nums[i] + nums[j] === target) {
-          cnt++;
-          if (cnt > 1) break outer;
-        }
-      }
-    }
-    if (cnt === 1) return [nums, target];
-  }
-  // 兜底（几乎不可达）：返回一个已知唯一解用例
-  return [[-7, 5, 2, 10], -2];
-}
-
-// ---- #3 无重复字符的最长子串：暴力 oracle + 手写边界 + 穷举 ----
-function lswrcBrute(s) {
-  let best = 0;
-  for (let i = 0; i < s.length; i++) {
-    const seen = new Set();
-    for (let j = i; j < s.length; j++) {
-      if (seen.has(s[j])) break;
-      seen.add(s[j]);
-      best = Math.max(best, j - i + 1);
-    }
-  }
-  return best;
-}
-function lswrcRandom(rand) {
-  const len = Math.floor(rand() * 121); // 0..120
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let s = '';
-  for (let i = 0; i < len; i++) s += chars[Math.floor(rand() * chars.length)];
-  return [s];
-}
-
-const registry = {
-  1: {
-    oracle: (args) => twoSumBrute(args),
-    genRandom: (rand) => twoSumRandom(rand),
-    curated: [
-      [[2, 7, 11, 15], 9],
-      [[3, 2, 4], 6],
-      [[3, 3], 6],
-      [[-3, 4, 3, 90], 0],
-      [[1, 1], 2],
-      [[0, 4, 3, 0], 0],
-      [[-10, -1, -18, -19], -20],
-    ],
-    randomCount: 30,
-  },
-  3: {
-    oracle: (args) => lswrcBrute(args[0]),
-    genRandom: (rand) => lswrcRandom(rand),
-    curated: [
-      ['abba'], ['tmmzuxt'], ['abcbda'], ['bbtablud'], ['anviaj'], ['dvdf'],
-      ['au'], [''], ['bbbbb'], ['abcabcbb'], ['pwwkew'], ['abab'],
-      ['aaaaaaaaaabbbbbbbbbbcccccccccc'], ['abcd'],
-      ['abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'],
-    ],
-    exhaustive: { alphabet: 'ab', maxLen: 5 },
-    randomCount: 30,
-  },
-};
-
-function computeExpected(id, args) {
-  const entry = registry[id];
-  if (!entry) return undefined;
-  return entry.oracle(args);
-}
-
-/** 确定性顺序生成：手写边界 → 穷举小空间 → 带种子随机，总量 ≤ MAX_CASES。 */
-function buildCases(id) {
+/**
+ * 生成某题的扩展用例（不含落盘）。
+ * @returns {Promise<{kind:string, core:Array, refUnusable:boolean, lowCoverage:boolean}>}
+ */
+async function buildCases(id) {
   id = String(id);
-  const entry = registry[id];
-  if (!entry) return [];
-  const cases = [];
+  const d = data();
+  const p = d.problems.find((x) => x.id === Number(id));
+  if (!p || !p.core) return { kind: 'func', core: [], refUnusable: false, lowCoverage: true };
+  const kind = p.core.kind === 'ops' ? 'ops' : 'func';
+  const bundled = (d.tests[id] && d.tests[id].core) || [];
+  const sol = d.solutions[id];
+  const ref = sol && sol.python3 && sol.python3.core;
+  if (!ref) return { kind, core: [], refUnusable: true, lowCoverage: true };
+
+  const spec = resolveSpec(id, p.core, kind, bundled);
+
+  // 参考题解自检：不过则其输出不可信，放弃本题扩展
+  const ok = await verifyReference({ core: p.core, refCode: ref, kind, bundled });
+  if (!ok) return { kind, core: [], refUnusable: true, lowCoverage: true };
+
+  const rand = seededRandom(seedFor(id));
   const seen = new Set();
-  const push = (args) => {
+  const cases = [];
+  const keyOf = (c) => JSON.stringify(c.ops ? { ops: c.ops, args: c.args } : c.args);
+  const addCase = (c, expected) => {
     if (cases.length >= MAX_CASES) return;
-    const key = JSON.stringify(args);
+    const key = keyOf(c);
     if (seen.has(key)) return;
     seen.add(key);
-    const expected = computeExpected(id, args);
-    if (expected === undefined) return;
-    cases.push({ args, expected });
+    cases.push(kind === 'ops' ? { ops: c.ops, args: c.args, expected } : { args: c.args, expected });
   };
-  for (const c of entry.curated || []) push(c);
-  if (entry.exhaustive) {
-    const { alphabet, maxLen } = entry.exhaustive;
-    const rec = (prefix, len) => {
-      if (len === 0) return [prefix];
-      const out = [];
-      for (const ch of alphabet) out.push(...rec(prefix + ch, len - 1));
-      return out;
-    };
-    for (let len = 0; len <= maxLen && cases.length < MAX_CASES; len++) {
-      for (const s of rec('', len)) push([s]);
-      if (cases.length >= MAX_CASES) break;
+
+  // round 0 注入手写边界 + 穷举空间；后续轮次随机生成
+  const curated = (spec.curated || []).map((c) => (kind === 'ops' ? { ops: c.ops, args: c.args } : { args: c }));
+  const exhausted = [];
+  if (spec.exhaustive) {
+    for (const s of exhaustiveStrings(spec.exhaustive.alphabet, spec.exhaustive.maxLen)) exhausted.push({ args: [s] });
+  }
+
+  let round = 0;
+  while (cases.length < TARGET_CASES && round < MAX_ROUNDS) {
+    const batch = [];
+    if (round === 0) batch.push(...curated, ...exhausted);
+    const want = TARGET_CASES - cases.length + 10;
+    for (let i = 0; i < want && batch.length < MAX_CASES; i++) {
+      if (kind === 'ops') batch.push(genOps(rand, p.core, spec));
+      else {
+        const args = spec.build ? spec.build(rand) : (spec.params || []).map((x) => genValue(rand, x));
+        if (args) batch.push({ args });
+      }
     }
+    const results = await runBatchRobust(p.core, ref, kind, batch);
+    for (let i = 0; i < batch.length; i++) {
+      const r = results[i];
+      if (r && r.valid && r.got !== undefined) addCase(batch[i], r.got);
+    }
+    round++;
   }
-  const rand = seededRandom(SEED);
-  for (let i = 0; i < (entry.randomCount || 0) && cases.length < MAX_CASES; i++) {
-    push(entry.genRandom(rand));
-  }
-  return cases;
+
+  // 注意：单参数小值域题（如 #22 括号生成，n=0..8 即全部可能输入）用例数天然偏少，不算低覆盖
+  const lowCoverage = cases.length < Math.min(8, TARGET_CASES);
+  return { kind, core: cases, refUnusable: false, lowCoverage };
 }
 
 function extendedCachePath(id) {
@@ -167,13 +138,22 @@ function loadExtendedTests(id) {
   } catch { return null; }
 }
 
-function generateExtendedTests(id) {
+async function generateExtendedTests(id) {
   id = String(id);
-  const cases = buildCases(id);
-  const data = { problemId: id, seed: SEED, generatedAt: new Date().toISOString(), core: cases, acm: [] };
+  const out = await buildCases(id);
+  const payload = {
+    problemId: id,
+    seed: SEED,
+    generatedAt: new Date().toISOString(),
+    kind: out.kind,
+    refUnusable: out.refUnusable,
+    lowCoverage: out.lowCoverage,
+    core: out.core,
+    acm: [],
+  };
   fs.mkdirSync(EXT_DIR, { recursive: true });
-  fs.writeFileSync(extendedCachePath(id), JSON.stringify(data, null, 1), 'utf8');
-  return data;
+  fs.writeFileSync(extendedCachePath(id), JSON.stringify(payload, null, 1), 'utf8');
+  return payload;
 }
 
-module.exports = { generateExtendedTests, loadExtendedTests, buildCases, registry, seededRandom };
+module.exports = { generateExtendedTests, loadExtendedTests, buildCases, seededRandom, MAX_CASES, TARGET_CASES };

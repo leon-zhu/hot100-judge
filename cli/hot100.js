@@ -228,8 +228,10 @@ async function cmdJudge(flags, positional) {
     const { loadExtendedTests, generateExtendedTests } = require(path.join(ROOT, 'judge', 'extend-tests'));
     let cache = flags.regenerate ? null : loadExtendedTests(String(p.id));
     if (!cache) {
-      cache = generateExtendedTests(String(p.id));
+      cache = await generateExtendedTests(String(p.id));
       if ((cache.core || []).length) console.log(`已生成 ${cache.core.length} 个扩展用例（work/extended/tests-${p.id}.json）`);
+      else if (cache.refUnusable) console.warn(`该题暂无扩展用例（参考题解未通过内置用例，已跳过）`);
+      else console.warn(`该题暂无扩展用例（无法生成合法输入）`);
     }
     extended = cache.core || [];
     hasExt = extended.length > 0;

@@ -524,6 +524,8 @@ Any build(const JVal& v) {
 }
 
 Canon canonList(ListNode* head) {
+    // 空链表序列化为 null（与 Python 驱动的 _to_json(None) 及 Java 驱动保持一致）
+    if (!head) return Canon();
     Canon c; c.t = Canon::ARR;
     unordered_set<ListNode*> seen;
     while (head && !seen.count(head)) {
@@ -536,6 +538,7 @@ Canon canonList(ListNode* head) {
 }
 
 Canon canonRandomList(Node* head) {
+    if (!head) return Canon();
     Canon c; c.t = Canon::ARR;
     vector<Node*> nodes;
     unordered_map<Node*, int> idx;
@@ -553,8 +556,8 @@ Canon canonRandomList(Node* head) {
 }
 
 Canon canonTree(TreeNode* root) {
+    if (!root) return Canon();  // 空树序列化为 null（与 Python/Java 驱动一致）
     Canon c; c.t = Canon::ARR;
-    if (!root) return c;
     queue<TreeNode*> q;
     q.push(root);
     while (!q.empty()) {
