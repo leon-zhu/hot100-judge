@@ -183,20 +183,80 @@ function zeroLiteral(type) {
   return m[type] || 'null';
 }
 
+// 评测驱动（judge/java-driver.js 生成的 Main.java）已注入这些类型。
+// 模板里以注释形式列出，仅作对照参考；不要取消注释后直接 judge，
+// 否则会与驱动中的同名类冲突（javac：类重复）。
+const JAVA_TYPE_DEFS = {
+  ListNode: `/**
+ * Definition for singly-linked list.
+ * class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */`,
+  TreeNode: `/**
+ * Definition for a binary tree node.
+ * class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */`,
+  Node: `/**
+ * Definition for a Node.
+ * class Node {
+ *     int val;
+ *     Node next;
+ *     Node random;
+ *     Node(int val) { this.val = val; this.next = null; this.random = null; }
+ * }
+ */`,
+};
+
+function javaNeededTypes(core) {
+  const found = new Set();
+  const add = (t) => {
+    if (t === 'list' || t === 'cycleList' || t === 'intersectList' || t === 'listArray') found.add('ListNode');
+    else if (t === 'tree') found.add('TreeNode');
+    else if (t === 'randomList') found.add('Node');
+  };
+  if (core.kind === 'ops') {
+    (core.ops.constructor || []).forEach((x) => add(x.type));
+    (core.ops.methods || []).forEach((m) => { (m.args || []).forEach(add); add(m.ret); });
+  } else {
+    (core.params || []).forEach((x) => add(x.type));
+    add(core.returns);
+  }
+  return [...found];
+}
+
 function initTemplate(p, lang) {
   const core = p.core;
   if (!core) die('该题无核心代码模式数据，无法生成模板');
   if (lang === 'java') {
     const jtype = (t) => JAVA_TYPE[t] || t;
+    // 该题依赖的、由评测环境提供的类型定义（注释形式，便于对照）
+    const defs = javaNeededTypes(core).map((t) => JAVA_TYPE_DEFS[t]).join('\n\n');
+    const defsBlock = defs ? defs + '\n\n' : '';
     if (core.kind === 'ops') {
       const ctor = (core.ops.constructor || []).map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
       const methods = (core.ops.methods || []).map((m) =>
         `    public ${jtype(m.ret)} ${m.name}(${m.args.map((t, i) => jtype(t) + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
-      return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
+      return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
     }
     const params = core.params.map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
     const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
-    return `import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
+    return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
   }
   // python3 / cpp：直接用题库自带的 core.templates（含 ops 类模板），保证签名与评测驱动一致
   const tpl = core.templates && core.templates[lang];

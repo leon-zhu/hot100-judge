@@ -115,6 +115,8 @@ hot100 init 20 --lang cpp     # 生成 sol-20.cpp（复用题库自带模板）
 
 - 默认语言 **Java**
 - Java 模板由题库 core 数据生成，类型映射与评测驱动一致（`list→ListNode`、`grid→char[][]`、`bool→boolean` 等）
+- 涉及链表/树/随机指针的题，模板顶部会以**注释形式**附上 `ListNode` / `TreeNode` / `Node` 的定义供对照。
+  这些类型由评测驱动注入，**切勿取消注释**，否则会与驱动中的同名类冲突（javac：类重复）
 - Python3 / C++ 模板直接复用题库 `core.templates`，签名与评测驱动严格一致
 - 生成的文件名为 `sol-<题号>.<扩展名>`，生成后可直接 `judge`
 
