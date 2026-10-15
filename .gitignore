@@ -24,3 +24,8 @@ work/cli-state.json
 # 扩展测试用例生成缓存 + 云端登录态（绝不提交）
 work/extended/
 work/leetcode-config.json
+
+# hot100 init 生成的解题文件（个人草稿，不入库）
+sol-*.java
+sol-*.py
+sol-*.cpp
