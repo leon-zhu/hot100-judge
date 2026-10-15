@@ -252,17 +252,17 @@ function initTemplate(p, lang) {
       const ctor = (core.ops.constructor || []).map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
       const methods = (core.ops.methods || []).map((m) =>
         `    public ${jtype(m.ret)} ${m.name}(${m.args.map((t, i) => jtype(t) + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
-      return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
+      return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
     }
     const params = core.params.map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
     const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
-    return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n// ${(p.explain || '').split('\n')[0]}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
+    return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
   }
   // python3 / cpp：直接用题库自带的 core.templates（含 ops 类模板），保证签名与评测驱动一致
   const tpl = core.templates && core.templates[lang];
   if (!tpl) die(`该题暂无 ${lang} 核心代码模板`);
   const cmt = lang === 'python3' ? '#' : '//';
-  return `${cmt} Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n${cmt} ${(p.explain || '').split('\n')[0]}\n${tpl}`;
+  return `${cmt} Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n${tpl}`;
 }
 
 async function cmdJudge(flags, positional) {
