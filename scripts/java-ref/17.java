@@ -2,17 +2,17 @@
 import java.util.*;
 
 class Solution {
-    public String[] letterCombinations(String digits) {
+    public List<String> letterCombinations(String digits) {
         // 核心思路: 回溯枚举，每个数字从按键字母表选一个字符，拼接出所有组合。
         // 关键步骤: i 表示当前位，path 记录已选字母，递归后恢复现场。
-        // 易错点: 空输入直接返回空数组，字符映射需覆盖数字 2 到 9。
+        // 易错点: 空输入直接返回空列表，字符映射需覆盖数字 2 到 9。
         // 复杂度: 时间 O(4^n·n)，空间 O(n) 递归栈。
-        if (digits.length() == 0) return new String[0];
-        String[] map = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
         List<String> res = new ArrayList<>();
+        if (digits.length() == 0) return res;
+        String[] map = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
         char[] path = new char[digits.length()];
         dfs(digits, map, 0, path, res);
-        return res.toArray(new String[0]);
+        return res;
     }
     void dfs(String digits, String[] map, int i, char[] path, List<String> res) {
         if (i == digits.length()) { res.add(new String(path)); return; }

@@ -1,12 +1,12 @@
 'use strict';
 /**
- * 把 work/parts/explains-*.json 的解题思路合并进 public/data/problems.json 的 explain 字段。
+ * 把 work/parts/explains-*.json 的解题思路合并进 data/problems.json 的 explain 字段。
  */
 const fs = require('fs');
 const path = require('path');
 
 const PARTS_DIR = path.join(__dirname, '..', 'work', 'parts');
-const PROBLEMS_FILE = path.join(__dirname, '..', 'public', 'data', 'problems.json');
+const PROBLEMS_FILE = path.join(__dirname, '..', 'data', 'problems.json');
 
 const problems = JSON.parse(fs.readFileSync(PROBLEMS_FILE, 'utf8'));
 const explains = {};

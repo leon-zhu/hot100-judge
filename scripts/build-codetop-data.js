@@ -1,6 +1,6 @@
 'use strict';
 /**
- * 从 work/codetop/ 的抓取数据构建每道题的 CodeTop 高频信息，写入 public/data/problems.json 的 freq 字段：
+ * 从 work/codetop/ 的抓取数据构建每道题的 CodeTop 高频信息，写入 data/problems.json 的 freq 字段：
  *   freq: {
  *     rank:      全局高频榜排名（1 起）
  *     value:     全局出现次数
@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CODETOP_DIR = path.join(__dirname, '..', 'work', 'codetop');
-const PROBLEMS_FILE = path.join(__dirname, '..', 'public', 'data', 'problems.json');
+const PROBLEMS_FILE = path.join(__dirname, '..', 'data', 'problems.json');
 
 function load(name) {
   return JSON.parse(fs.readFileSync(path.join(CODETOP_DIR, name), 'utf8'));

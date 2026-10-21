@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function get(url) {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const resp = await fetch(url, { headers: { 'user-agent': 'hot100-acm/1.0 (local practice tool)' } });
+      const resp = await fetch(url, { headers: { 'user-agent': 'hot100-judge/1.0 (local practice tool)' } });
       if (resp.ok) return await resp.json();
       if (resp.status === 429) {
         console.log('触发限流 429，等待 8s 后重试…');

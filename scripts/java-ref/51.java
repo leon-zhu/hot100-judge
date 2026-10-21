@@ -6,21 +6,21 @@ class Solution {
     // 关键点：d1[r+c] 与 d2[r-c+n-1] 分别对应两条对角线方向。
     // 易错点：递归返回后需撤销标记并还原棋盘。
     // 时间复杂度 O(n!)，空间复杂度 O(n)。
-    public String[][] solveNQueens(int n) {
-        List<String[]> res = new ArrayList<>();
+    public List<List<String>> solveNQueens(int n) {
+        List<List<String>> res = new ArrayList<>();
         char[][] board = new char[n][n];
         for (char[] row : board) Arrays.fill(row, '.');
         boolean[] cols = new boolean[n];
         boolean[] d1 = new boolean[2 * n - 1];
         boolean[] d2 = new boolean[2 * n - 1];
         dfs(0, n, board, cols, d1, d2, res);
-        return res.toArray(new String[0][]);
+        return res;
     }
 
-    void dfs(int r, int n, char[][] board, boolean[] cols, boolean[] d1, boolean[] d2, List<String[]> res) {
+    void dfs(int r, int n, char[][] board, boolean[] cols, boolean[] d1, boolean[] d2, List<List<String>> res) {
         if (r == n) {
-            String[] sol = new String[n];
-            for (int i = 0; i < n; i++) sol[i] = new String(board[i]);
+            List<String> sol = new ArrayList<>();
+            for (int i = 0; i < n; i++) sol.add(new String(board[i]));
             res.add(sol);
             return;
         }

@@ -1,7 +1,7 @@
 # 🔥 Hot100 命令行刷题工具 · 使用说明
 
-本地运行的 LeetCode Hot 100 刷题 CLI：**查询、评测（含 Java）、进度追踪** 一条命令搞定。
-题库 100 题 / 959 测试用例 / 400 份题解，纯本地离线可用。
+本地运行的 LeetCode Hot 100 刷题 CLI（**Java-only**）：**查询、评测、云端判定、进度追踪** 一条命令搞定。
+题库 100 题 / 481 组内置用例 / 100 份 Java 参考题解，纯本地离线可用；本地模板与力扣官方 Java 签名一致。
 
 ---
 
@@ -12,11 +12,9 @@
 | 依赖 | 用途 | 必装 |
 |---|---|---|
 | Node.js ≥ 18 | 运行 CLI 本体 | ✅ 必须 |
-| `javac` / `java` | **Java** 核心代码模式评测 | 想用 Java 刷题则必须 |
-| `python3` | Python3 评测 | 想用 Python 刷题则必须 |
-| `gcc` / `g++` | C 语言 / C++ 评测 | 想用 C/C++ 刷题则必须 |
+| `javac` / `java`（JDK 17+） | Java 核心代码模式评测 | ✅ 必须 |
 
-> 注：本仓库所有语言共用一套用例与题解；只装你用的语言即可，其余命令（list/show/search 等）不依赖编译器。
+> 已移除 Python3 / C++ / ACM 模式；`list/show/search` 等查询命令不依赖编译器。
 
 ### 1.2 安装全局命令
 
@@ -37,8 +35,9 @@ hot100 list [选项]                    题目列表（表格）
 hot100 show <题号> [--explain]        题目详情
 hot100 search <关键词>                搜索题目
 hot100 random [--company X] [--unfinished]  随机抽一题
-hot100 init <题号> [--lang X]         生成模板文件
-hot100 judge <题号> <文件> [选项]     提交答案评测
+hot100 init <题号>                   生成 Java 模板（sol-<id>.java）
+hot100 judge <题号> <文件> [选项]     提交 Java 答案评测（核心代码模式）
+hot100 login                         保存云端判定所需登录态
 hot100 mark <题号> <操作>             标记已刷 / 收藏
 hot100 progress                       进度统计
 hot100 -h | --help | help             帮助
@@ -76,8 +75,8 @@ hot100 list --sort rank --company 腾讯 --difficulty 中等 --top 20
 ### 3.2 `show <题号> [--explain]` — 题目详情
 
 ```bash
-hot100 show 1                  # 题目信息：描述 / 核心签名 / ACM 输入输出 / CodeTop 高频
-hot100 show 1 --explain        # 在上面的基础上追加：解题思路 + Python3/Java 参考题解
+hot100 show 1                  # 题目信息：描述 / 官方 Java 签名 / CodeTop 高频
+hot100 show 1 --explain        # 在上面的基础上追加：解题思路 + Java 参考题解
 hot100 show 146                # ops 型题（LRU）显示类签名
 ```
 
@@ -104,50 +103,35 @@ hot100 random --company 美团         # 只从美团常考题里抽
 
 ## 4. 刷题（评测）
 
-### 4.1 `init <题号> [--lang java|python3|cpp]` — 生成模板
+### 4.1 `init <题号>` — 生成 Java 模板
 
 ```bash
-hot100 init 1 --lang java     # 生成 sol-1.java（含正确方法签名 + import）
-hot100 init 146 --lang java   # ops 题生成 class LRUCache 骨架
-hot100 init 20 --lang python3 # 生成 sol-20.py（顶层函数签名）
-hot100 init 20 --lang cpp     # 生成 sol-20.cpp（复用题库自带模板）
+hot100 init 1     # 生成 sol-1.java（官方签名 + import）
+hot100 init 146   # ops 题生成 class LRUCache 骨架
+hot100 init 15    # 生成 List<List<Integer>> threeSum(int[] nums)
 ```
 
-- 默认语言 **Java**
-- Java 模板由题库 core 数据生成，类型映射与评测驱动一致（`list→ListNode`、`grid→char[][]`、`bool→boolean` 等）
+- 仅支持 Java；模板由 `judge/java-signatures.js` 按**力扣官方 Java 签名**生成
 - 涉及链表/树/随机指针的题，模板顶部会以**注释形式**附上 `ListNode` / `TreeNode` / `Node` 的定义供对照。
   这些类型由评测驱动注入，**切勿取消注释**，否则会与驱动中的同名类冲突（javac：类重复）
-- Python3 / C++ 模板直接复用题库 `core.templates`，签名与评测驱动严格一致
-- 模板只含**方法签名 + 一行「题号/标题/难度/专题」说明**（外加必要的类型提示与 `TODO` 占位），**不含解题思路**；需要题解用 `hot100 show <题号> --explain`
-- 生成的文件名为 `sol-<题号>.<扩展名>`，生成后可直接 `judge`
+- 模板只含**方法签名 + 一行「题号/标题/难度/专题」说明**，**不含解题思路**；需要题解用 `hot100 show <题号> --explain`
+- 生成的文件名为 `sol-<题号>.java`，生成后可直接 `judge`
+- **旧版简化签名文件不兼容**（如 `int[][] threeSum`），请重新 `init` 后迁移代码
 
 ### 4.2 `judge <题号> <文件> [选项]` — 提交答案评测
 
 ```bash
-hot100 judge 1 sol-1.java              # Java，核心代码模式
-hot100 judge 20 sol.py                 # 按扩展名自动识别 python3
-hot100 judge 1 sol-1.cpp --lang cpp    # 显式指定语言
-hot100 judge 20 sol.py --mode acm      # ACM 模式（完整程序，读 stdin 写 stdout）
+hot100 judge 1 sol-1.java              # 核心代码模式
+hot100 judge 15 sol-15.java --cloud    # 本地通过后提交力扣官方判定
 ```
 
 | 选项 | 说明 |
 |---|---|
-| `--lang <语言>` | `java` / `python3` / `cpp`；默认按扩展名推断（`.java`→java、`.py`→python3、`.cpp`→cpp） |
-| `--mode core` | 核心代码模式（默认）——只写函数/类 |
-| `--mode acm` | ACM 模式——写完整程序 |
 | `--cloud` | 本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie） |
 | `--regenerate` | 强制重建扩展用例缓存 |
 | `--no-extend` | 只用内置用例，不合并扩展用例 |
 
-**语言支持矩阵**
-
-| 语言 | 核心代码模式 | ACM 模式 |
-|---|---|---|
-| Java | ✅（重点支持） | ❌ |
-| Python3 | ✅ | ✅ |
-| C++ | ✅ | ✅ |
-
-**评测流程**：读取你的代码 → 编译（真实 javac/gcc/python3）→ 对全部测试用例逐条执行 → 输出每个失败用例的 期望/实际 → 汇总 `✅ n/n` 或 `❌ n/m`。
+**评测流程**：读取 `.java` 代码 → `javac` 编译（注入驱动）→ 对全部测试用例执行 → 输出每个失败用例的 期望/实际 → 汇总 `✅ n/n` 或 `❌ n/m`。
 
 对 LeetCode 允许任意顺序的题（两数之和、三数之和、全排列、字母异位词分组等），本地按**顺序无关**比较（`judge/checkers.js`），不会因返回顺序不同误判；具体规则为顶层无序或任意层级无序。
 
@@ -184,10 +168,10 @@ $ hot100 judge 1 scripts/java-ref/1.java
 **全部 100 题均已支持**（含链表 / 树 / 矩阵 / ops 类设计题）。生成流程：
 
 1. **输入生成**：按 `core.params` 类型驱动随机生成；能从内置用例自动推导取值/长度/有序/互异等约束，特殊题（#1 需保证唯一解、#105 前序中序须同源、#215 需 k≤n 等）在 `judge/gen/spec.js` 用 override 声明。
-2. **期望值**：直接用题库自带 **python3 参考题解**跑出结果作为 `expected`，无需手写 oracle；参考题解抛异常的用例（非法输入）自动丢弃。
+2. **期望值**：直接用题库自带 **Java 参考题解**（`scripts/java-ref/`）跑出结果作为 `expected`，无需手写 oracle；参考题解抛异常的用例（非法输入）自动丢弃。
 3. **自检**：参考题解若连内置用例都过不了，则放弃该题扩展（`refUnusable`）。
 
-校验：`node scripts/verify-extend-all.js` 会用 **Python3/C++/Java 三份参考题解**各跑一遍全部扩展用例，确保不会误伤正确解。
+校验：`node scripts/verify-extend-all.js` 会用 **Java 参考题解**跑一遍全部扩展用例，确保不会误伤正确解。
 
 ### 4.4 `--cloud` 云端判定（可选，需登录态）
 
@@ -203,7 +187,9 @@ $ hot100 judge 1 scripts/java-ref/1.java
    - 浏览器登录 https://leetcode.cn ，开发者工具（Application/Cookies）复制 `LEETCODE_SESSION` 和 `csrftoken`
    - 环境变量：`LEETCODE_SESSION=xxx LEETCODE_CSRF_TOKEN=yyy hot100 judge 3 sol-3.java --cloud`
    - 配置文件：`work/leetcode-config.json` 写入 `{ "session": "xxx", "csrf": "yyy" }` 并 `chmod 600`
-3. 运行 `hot100 judge <题号> <文件> --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例与期望。
+3. 运行 `hot100 judge <题号> <文件> --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例、期望或运行错误。
+   - 本地模板已使用力扣官方 Java 签名，提交时**原样提交**，不再需要签名适配层
+   - 旧版简化签名文件（如 `int[][]`）请先用 `hot100 init` 生成官方模板并迁移代码
 
 云端任何失败（未配置登录态 / 登录态失效 / 网络 / 超时）只会打印 `⚠` 告警，**不影响本地判题结果与退出码**。
 
@@ -252,11 +238,9 @@ hot100 progress
 
 ---
 
-## 6. 与 Web 端的关系
+## 6. CLI-only
 
-- 仓库同时提供浏览器端（`npm start` → `http://localhost:5173`）与本 CLI
-- **数据完全同源**：都读取 `public/data/` 下同一份 题库/用例/题解
-- CLI 的 `judge` 与 Web 端 `/api/judge` 共用同一套 `judge/` 评测模块，结论一致
+仓库已移除 Web UI 与 ACM 模式，仅保留 CLI（Java 核心代码模式）。CLI 直接读取 `data/` 下的题库/用例/题解。
 
 ---
 
@@ -268,18 +252,20 @@ cli/
 judge/
   extend-tests.js      # ★ 扩展用例编排（生成候选 → 求期望值 → 落缓存）
   gen/inputs.js        # ★ 类型驱动输入生成器 + 约束 flag + 从内置用例自动推导
-  gen/oracle.js        # ★ 参考题解 oracle（跑 python3 题解取期望值 + 自检）
+  gen/oracle.js        # ★ Java 参考题解 oracle（取期望值 + 自检）
   gen/spec.js          # ★ 逐题 override（#1 唯一解、#105 前序中序、#146 容量等）
-  leetcode-submit.js   # 云端提交（--cloud，需登录态 cookie）
-  java-driver.js     # ★ Java 核心代码模式驱动生成器
-  core-driver.js     # Python/C++ 驱动生成器 + 导出 Java 驱动
-  judge.js           # 评测逻辑（ACM / 核心代码）
-  runner.js          # 进程执行与资源限制
+  java-signatures.js   # ★ 官方 Java 签名解析（21 题 override）
+  java-driver.js       # ★ Java 核心代码模式驱动生成器
+  official-signatures.json  # 100 题官方签名快照
+  judge.js             # Java 核心代码评测
+  runner.js            # 进程执行与资源限制
+  leetcode-submit.js   # 云端提交（--cloud）
+  leetcode-login.js    # 浏览器代登录抓 cookie
 scripts/
-  verify-java.js     # Java 驱动验证（100 题桩冒烟 + 100 份参考题解）
-  java-ref/          # Java 参考题解（驱动正确性验证用，全 100 题）
-  ...                # 数据构建 / 抓取 / 端到端测试等脚本
-public/data/         # 题库 / 用例 / 题解（JSON，离线）
+  java-ref/            # 100 份 Java 参考题解（数据源 + 验证）
+  merge-parts.js       # work/parts + java-ref → data/
+  verify-java.js       # 100 题桩冒烟 + 100 份参考题解 + 官方签名
+data/                  # 题库 / 用例 / Java 题解（JSON，离线）
 ```
 
 ---
@@ -294,7 +280,7 @@ hot100 list --sort rank --top 20
 hot100 show 15
 
 # 3. 生成模板开始写
-hot100 init 15 --lang java
+hot100 init 15
 #    …在你自己的编辑器里实现…
 
 # 4. 提交评测
@@ -316,16 +302,13 @@ hot100 random --unfinished
 **Q1：`judge` 报"未安装 javac/java"？**
 Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt install default-jdk`（Debian/Ubuntu）。
 
-**Q2：C++ 评测在本机编译报 `bits/stdc++.h` 找不到？**
-本仓库 C++ 驱动使用 `bits/stdc++.h`，部分 macOS 的 clang 环境缺 libstdc++ 头。评测器会自动优先使用 Homebrew 安装的真实 GNU g++（`g++-16`→`g++-11`，如 `brew install gcc`），找不到时才回退到系统默认 `g++`；GitHub Actions 的 g++ 环境可正常跑。
-
-**Q3：评测失败但我的答案看起来对？**
+**Q2：评测失败但我的答案看起来对？**
 检查：方法/类签名是否与 `show` 输出完全一致（参数类型、返回类型）；核心代码模式不要写 `main`；变量名冲突。必要时用 `hot100 show <id>` 对比签名，或 `hot100 show <id> --explain` 参考题解。
 
-**Q4：能离线用吗？**
-能。题库/用例/题解全部在本地 `public/data/`，评测在本地编译运行，全程无需联网（只有抓取 CodeTop 数据才需要联网，非必须）。
+**Q3：能离线用吗？**
+能。题库/用例/题解全部在本地 `data/`，评测在本地编译运行，全程无需联网；只有 `--cloud` 与抓取 CodeTop 数据需要联网。
 
-**Q5：进度存在哪、会弄脏 git 吗？**
+**Q4：进度存在哪、会弄脏 git 吗？**
 存在 `work/cli-state.json`，已加入 `.gitignore`，不会进入版本控制。
 
 ---
@@ -333,11 +316,12 @@ Java 评测需要本机有 JDK：`brew install openjdk`（macOS）或 `apt insta
 ## 10. 验证与测试
 
 ```bash
-node scripts/verify-java.js        # Java 驱动验证：100 题桩冒烟 + 100 份参考题解（全绿）
-node scripts/test-judge.js         # 驱动生成自测
-node scripts/verify-parts.js all   # 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java）
+node scripts/merge-parts.js        # work/parts + java-ref → data/
+node scripts/verify-java.js        # 100 题桩冒烟 + 100 份参考题解 + 官方签名
+node scripts/test-judge.js         # 驱动边界（List/节点语义/顺序无关）
 node scripts/test-extend.js        # 扩展用例生成器测试（含 sol-3 / LRU 回归）
-node scripts/verify-extend-all.js  # 全量扩展用例验证（100 题 × Python3/C++/Java 参考题解全过）
+node scripts/verify-extend-all.js  # 全量扩展用例验证（100 题，Java 参考题解全过）
+npm run verify                     # 依次执行以上验证
 ```
 
 CI（GitHub Actions）在每次 push 时自动运行上述验证。

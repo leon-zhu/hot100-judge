@@ -5,8 +5,8 @@
     "hot100": "cli/hot100.js"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "build:data": "node scripts/merge-parts.js",
+    "verify": "node scripts/verify-java.js && node scripts/test-judge.js && node scripts/test-extend.js && node scripts/verify-extend-all.js"
   },
   "dependencies": {},
   "devDependencies": {}

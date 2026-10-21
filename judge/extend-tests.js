@@ -5,7 +5,7 @@
  *   resolveSpec(自动推导 + 手写 override) → 生成候选输入 → 参考题解 oracle 求期望值
  *   → 丢弃非法用例 / 去重 / 裁剪 → work/extended/tests-<id>.json（gitignore，可 --regenerate 重建）
  *
- * 期望值来源：题库自带 python3 参考题解（见 judge/gen/oracle.js）。参考题解抛异常的用例被丢弃。
+ * 期望值来源：题库自带 Java 参考题解（见 judge/gen/oracle.js）。参考题解抛异常的用例被丢弃。
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,9 +14,11 @@ const { seededRandom, genValue, genOps } = require('./gen/inputs');
 const { runReference, verifyReference } = require('./gen/oracle');
 
 const ROOT = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT, 'public', 'data');
+const DATA_DIR = path.join(ROOT, 'data');
 const EXT_DIR = path.join(ROOT, 'work', 'extended');
 const SEED = 20261013;
+// 生成规则变更时递增，自动让旧缓存失效
+const GEN_VERSION = 3;
 const MAX_CASES = 100;
 const TARGET_CASES = 40;
 const MAX_ROUNDS = 12;
@@ -40,14 +42,14 @@ function seedFor(id) { return (SEED ^ (Number(id) * 2654435761)) >>> 0; }
  * 批量跑参考题解；整批失败（如某用例死循环触发 CPU 限）时二分重试，
  * 避免单个坏用例拖垮整批。返回与 batch 等长、按序对齐的结果。
  */
-async function runBatchRobust(core, ref, kind, batch) {
+async function runBatchRobust(problemId, core, ref, kind, batch) {
   if (!batch.length) return [];
-  const { fatal, results } = await runReference({ core, refCode: ref, kind, candidates: batch });
+  const { fatal, results } = await runReference({ problemId, core, refCode: ref, kind, candidates: batch });
   if (!fatal) return results;
   if (batch.length === 1) return [{ valid: false }];
   const mid = Math.floor(batch.length / 2);
-  const a = await runBatchRobust(core, ref, kind, batch.slice(0, mid));
-  const b = await runBatchRobust(core, ref, kind, batch.slice(mid));
+  const a = await runBatchRobust(problemId, core, ref, kind, batch.slice(0, mid));
+  const b = await runBatchRobust(problemId, core, ref, kind, batch.slice(mid));
   return [...a, ...b];
 }
 
@@ -73,13 +75,13 @@ async function buildCases(id) {
   const kind = p.core.kind === 'ops' ? 'ops' : 'func';
   const bundled = (d.tests[id] && d.tests[id].core) || [];
   const sol = d.solutions[id];
-  const ref = sol && sol.python3 && sol.python3.core;
+  const ref = sol && sol.java && sol.java.core;
   if (!ref) return { kind, core: [], refUnusable: true, lowCoverage: true };
 
   const spec = resolveSpec(id, p.core, kind, bundled);
 
   // 参考题解自检：不过则其输出不可信，放弃本题扩展
-  const ok = await verifyReference({ core: p.core, refCode: ref, kind, bundled });
+  const ok = await verifyReference({ problemId: id, core: p.core, refCode: ref, kind, bundled });
   if (!ok) return { kind, core: [], refUnusable: true, lowCoverage: true };
 
   const rand = seededRandom(seedFor(id));
@@ -113,7 +115,7 @@ async function buildCases(id) {
         if (args) batch.push({ args });
       }
     }
-    const results = await runBatchRobust(p.core, ref, kind, batch);
+    const results = await runBatchRobust(id, p.core, ref, kind, batch);
     for (let i = 0; i < batch.length; i++) {
       const r = results[i];
       if (r && r.valid && r.got !== undefined) addCase(batch[i], r.got);
@@ -134,7 +136,8 @@ function extendedCachePath(id) {
 function loadExtendedTests(id) {
   id = String(id);
   try {
-    return JSON.parse(fs.readFileSync(extendedCachePath(id), 'utf8'));
+    const cached = JSON.parse(fs.readFileSync(extendedCachePath(id), 'utf8'));
+    return cached && cached.genVersion === GEN_VERSION ? cached : null;
   } catch { return null; }
 }
 
@@ -143,13 +146,13 @@ async function generateExtendedTests(id) {
   const out = await buildCases(id);
   const payload = {
     problemId: id,
+    genVersion: GEN_VERSION,
     seed: SEED,
     generatedAt: new Date().toISOString(),
     kind: out.kind,
     refUnusable: out.refUnusable,
     lowCoverage: out.lowCoverage,
     core: out.core,
-    acm: [],
   };
   fs.mkdirSync(EXT_DIR, { recursive: true });
   fs.writeFileSync(extendedCachePath(id), JSON.stringify(payload, null, 1), 'utf8');

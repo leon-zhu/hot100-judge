@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * 参考题解 oracle：
- *   - runReference：把候选用例的 expected 置空，跑一遍题库自带 python3 题解，读取原始 got 作为期望值。
+ * 参考题解 oracle（Java-only）：
+ *   - runReference：把候选用例的 expected 置空，跑一遍题库自带 Java 题解，读取原始 got 作为期望值。
  *   - verifyReference：参考题解自检（必须能过该题内置用例），不过则放弃该题扩展。
  *
  * 复用现有 judgeCore，无需另写运行器。参考题解抛异常的用例会被标记 valid=false 并丢弃。
@@ -19,9 +19,9 @@ function toTests(kind, candidates) {
 /**
  * @returns {Promise<{fatal:?string, results:Array<{valid:boolean, got:*, error:?string}>}>}
  */
-async function runReference({ core, refCode, kind, candidates }) {
+async function runReference({ problemId, core, refCode, kind, candidates }) {
   if (!candidates.length) return { fatal: null, results: [] };
-  const out = await judgeCore({ language: 'python3', code: refCode, core, tests: toTests(kind, candidates) });
+  const out = await judgeCore({ language: 'java', code: refCode, core, tests: toTests(kind, candidates), problemId });
   if (out.error) return { fatal: out.error, results: [] };
   return {
     fatal: null,
@@ -30,9 +30,9 @@ async function runReference({ core, refCode, kind, candidates }) {
 }
 
 /** 参考题解必须能通过该题内置用例，否则其输出不可信。 */
-async function verifyReference({ core, refCode, kind, bundled }) {
+async function verifyReference({ problemId, core, refCode, kind, bundled }) {
   if (!bundled || !bundled.length) return false;
-  const out = await judgeCore({ language: 'python3', code: refCode, core, tests: bundled });
+  const out = await judgeCore({ language: 'java', code: refCode, core, tests: bundled, problemId });
   if (out.error) return false;
   return out.results.every((r) => r.ok);
 }

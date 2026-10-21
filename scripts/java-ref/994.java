@@ -2,7 +2,7 @@
 import java.util.*;
 
 class Solution {
-    public int orangesRotting(char[][] grid) {
+    public int orangesRotting(int[][] grid) {
         // 核心思路: 多源 BFS，所有烂橘子同时向外扩散，扩散层数即所需分钟数。
         // 关键步骤: 初始把全部烂橘子入队并统计新鲜橘子数，逐层感染并计时。
         // 易错点: 结束时仍有新鲜橘子说明无法全部感染，返回 -1。
@@ -12,8 +12,8 @@ class Solution {
         int fresh = 0;
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++) {
-                if (grid[i][j] == '2') q.offer(new int[]{i, j});
-                else if (grid[i][j] == '1') fresh++;
+                if (grid[i][j] == 2) q.offer(new int[]{i, j});
+                else if (grid[i][j] == 1) fresh++;
             }
         int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         int minutes = 0;
@@ -23,8 +23,8 @@ class Solution {
                 int[] cur = q.poll();
                 for (int[] d : dirs) {
                     int ni = cur[0] + d[0], nj = cur[1] + d[1];
-                    if (ni >= 0 && ni < m && nj >= 0 && nj < n && grid[ni][nj] == '1') {
-                        grid[ni][nj] = '2';
+                    if (ni >= 0 && ni < m && nj >= 0 && nj < n && grid[ni][nj] == 1) {
+                        grid[ni][nj] = 2;
                         fresh--;
                         q.offer(new int[]{ni, nj});
                     }

@@ -6,12 +6,12 @@ class Solution {
     // 关键点：isPal 双指针判回文；递归后 path 需移除末尾恢复现场。
     // 易错点：分割到末尾时保存当前 path 的副本。
     // 时间复杂度 O(n * 2^n)，空间复杂度 O(n)。
-    public String[][] partition(String s) {
+    public List<List<String>> partition(String s) {
         int n = s.length();
-        List<String[]> res = new ArrayList<>();
+        List<List<String>> res = new ArrayList<>();
         List<String> path = new ArrayList<>();
         dfs(0, n, s, path, res);
-        return res.toArray(new String[0][]);
+        return res;
     }
 
     // 双指针判断 s 中 [i, j] 闭区间是否为回文串
@@ -24,9 +24,9 @@ class Solution {
         return true;
     }
 
-    void dfs(int start, int n, String s, List<String> path, List<String[]> res) {
+    void dfs(int start, int n, String s, List<String> path, List<List<String>> res) {
         if (start == n) {
-            res.add(path.toArray(new String[0]));
+            res.add(new ArrayList<>(path));
             return;
         }
         for (int end = start; end < n; end++) {

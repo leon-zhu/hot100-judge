@@ -1,0 +1,818 @@
+{
+ "1": {
+  "className": "Solution",
+  "method": "twoSum",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int[]"
+ },
+ "2": {
+  "className": "Solution",
+  "method": "addTwoNumbers",
+  "params": [
+   "ListNode",
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "3": {
+  "className": "Solution",
+  "method": "lengthOfLongestSubstring",
+  "params": [
+   "String"
+  ],
+  "returns": "int"
+ },
+ "4": {
+  "className": "Solution",
+  "method": "findMedianSortedArrays",
+  "params": [
+   "int[]",
+   "int[]"
+  ],
+  "returns": "double"
+ },
+ "5": {
+  "className": "Solution",
+  "method": "longestPalindrome",
+  "params": [
+   "String"
+  ],
+  "returns": "String"
+ },
+ "11": {
+  "className": "Solution",
+  "method": "maxArea",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "15": {
+  "className": "Solution",
+  "method": "threeSum",
+  "params": [
+   "int[]"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "17": {
+  "className": "Solution",
+  "method": "letterCombinations",
+  "params": [
+   "String"
+  ],
+  "returns": "List<String>"
+ },
+ "19": {
+  "className": "Solution",
+  "method": "removeNthFromEnd",
+  "params": [
+   "ListNode",
+   "int"
+  ],
+  "returns": "ListNode"
+ },
+ "20": {
+  "className": "Solution",
+  "method": "isValid",
+  "params": [
+   "String"
+  ],
+  "returns": "boolean"
+ },
+ "21": {
+  "className": "Solution",
+  "method": "mergeTwoLists",
+  "params": [
+   "ListNode",
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "22": {
+  "className": "Solution",
+  "method": "generateParenthesis",
+  "params": [
+   "int"
+  ],
+  "returns": "List<String>"
+ },
+ "23": {
+  "className": "Solution",
+  "method": "mergeKLists",
+  "params": [
+   "ListNode[]"
+  ],
+  "returns": "ListNode"
+ },
+ "24": {
+  "className": "Solution",
+  "method": "swapPairs",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "25": {
+  "className": "Solution",
+  "method": "reverseKGroup",
+  "params": [
+   "ListNode",
+   "int"
+  ],
+  "returns": "ListNode"
+ },
+ "31": {
+  "className": "Solution",
+  "method": "nextPermutation",
+  "params": [
+   "int[]"
+  ],
+  "returns": "void"
+ },
+ "32": {
+  "className": "Solution",
+  "method": "longestValidParentheses",
+  "params": [
+   "String"
+  ],
+  "returns": "int"
+ },
+ "33": {
+  "className": "Solution",
+  "method": "search",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "34": {
+  "className": "Solution",
+  "method": "searchRange",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int[]"
+ },
+ "35": {
+  "className": "Solution",
+  "method": "searchInsert",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "39": {
+  "className": "Solution",
+  "method": "combinationSum",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "41": {
+  "className": "Solution",
+  "method": "firstMissingPositive",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "42": {
+  "className": "Solution",
+  "method": "trap",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "45": {
+  "className": "Solution",
+  "method": "jump",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "46": {
+  "className": "Solution",
+  "method": "permute",
+  "params": [
+   "int[]"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "48": {
+  "className": "Solution",
+  "method": "rotate",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "void"
+ },
+ "49": {
+  "className": "Solution",
+  "method": "groupAnagrams",
+  "params": [
+   "String[]"
+  ],
+  "returns": "List<List<String>>"
+ },
+ "51": {
+  "className": "Solution",
+  "method": "solveNQueens",
+  "params": [
+   "int"
+  ],
+  "returns": "List<List<String>>"
+ },
+ "53": {
+  "className": "Solution",
+  "method": "maxSubArray",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "54": {
+  "className": "Solution",
+  "method": "spiralOrder",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "List<Integer>"
+ },
+ "55": {
+  "className": "Solution",
+  "method": "canJump",
+  "params": [
+   "int[]"
+  ],
+  "returns": "boolean"
+ },
+ "56": {
+  "className": "Solution",
+  "method": "merge",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "int[][]"
+ },
+ "62": {
+  "className": "Solution",
+  "method": "uniquePaths",
+  "params": [
+   "int",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "64": {
+  "className": "Solution",
+  "method": "minPathSum",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "int"
+ },
+ "70": {
+  "className": "Solution",
+  "method": "climbStairs",
+  "params": [
+   "int"
+  ],
+  "returns": "int"
+ },
+ "72": {
+  "className": "Solution",
+  "method": "minDistance",
+  "params": [
+   "String",
+   "String"
+  ],
+  "returns": "int"
+ },
+ "73": {
+  "className": "Solution",
+  "method": "setZeroes",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "void"
+ },
+ "74": {
+  "className": "Solution",
+  "method": "searchMatrix",
+  "params": [
+   "int[][]",
+   "int"
+  ],
+  "returns": "boolean"
+ },
+ "75": {
+  "className": "Solution",
+  "method": "sortColors",
+  "params": [
+   "int[]"
+  ],
+  "returns": "void"
+ },
+ "76": {
+  "className": "Solution",
+  "method": "minWindow",
+  "params": [
+   "String",
+   "String"
+  ],
+  "returns": "String"
+ },
+ "78": {
+  "className": "Solution",
+  "method": "subsets",
+  "params": [
+   "int[]"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "79": {
+  "className": "Solution",
+  "method": "exist",
+  "params": [
+   "char[][]",
+   "String"
+  ],
+  "returns": "boolean"
+ },
+ "84": {
+  "className": "Solution",
+  "method": "largestRectangleArea",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "94": {
+  "className": "Solution",
+  "method": "inorderTraversal",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "List<Integer>"
+ },
+ "98": {
+  "className": "Solution",
+  "method": "isValidBST",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "boolean"
+ },
+ "101": {
+  "className": "Solution",
+  "method": "isSymmetric",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "boolean"
+ },
+ "102": {
+  "className": "Solution",
+  "method": "levelOrder",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "104": {
+  "className": "Solution",
+  "method": "maxDepth",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "int"
+ },
+ "105": {
+  "className": "Solution",
+  "method": "buildTree",
+  "params": [
+   "int[]",
+   "int[]"
+  ],
+  "returns": "TreeNode"
+ },
+ "108": {
+  "className": "Solution",
+  "method": "sortedArrayToBST",
+  "params": [
+   "int[]"
+  ],
+  "returns": "TreeNode"
+ },
+ "114": {
+  "className": "Solution",
+  "method": "flatten",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "void"
+ },
+ "118": {
+  "className": "Solution",
+  "method": "generate",
+  "params": [
+   "int"
+  ],
+  "returns": "List<List<Integer>>"
+ },
+ "121": {
+  "className": "Solution",
+  "method": "maxProfit",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "124": {
+  "className": "Solution",
+  "method": "maxPathSum",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "int"
+ },
+ "128": {
+  "className": "Solution",
+  "method": "longestConsecutive",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "131": {
+  "className": "Solution",
+  "method": "partition",
+  "params": [
+   "String"
+  ],
+  "returns": "List<List<String>>"
+ },
+ "136": {
+  "className": "Solution",
+  "method": "singleNumber",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "138": {
+  "className": "Solution",
+  "method": "copyRandomList",
+  "params": [
+   "Node"
+  ],
+  "returns": "Node"
+ },
+ "139": {
+  "className": "Solution",
+  "method": "wordBreak",
+  "params": [
+   "String",
+   "List<String>"
+  ],
+  "returns": "boolean"
+ },
+ "141": {
+  "className": "Solution",
+  "method": "hasCycle",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "boolean"
+ },
+ "142": {
+  "className": "Solution",
+  "method": "detectCycle",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "146": {
+  "kind": "ops",
+  "className": "LRUCache"
+ },
+ "148": {
+  "className": "Solution",
+  "method": "sortList",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "152": {
+  "className": "Solution",
+  "method": "maxProduct",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "153": {
+  "className": "Solution",
+  "method": "findMin",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "155": {
+  "kind": "ops",
+  "className": "MinStack"
+ },
+ "160": {
+  "className": "Solution",
+  "method": "getIntersectionNode",
+  "params": [
+   "ListNode",
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "169": {
+  "className": "Solution",
+  "method": "majorityElement",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "189": {
+  "className": "Solution",
+  "method": "rotate",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "void"
+ },
+ "198": {
+  "className": "Solution",
+  "method": "rob",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "199": {
+  "className": "Solution",
+  "method": "rightSideView",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "List<Integer>"
+ },
+ "200": {
+  "className": "Solution",
+  "method": "numIslands",
+  "params": [
+   "char[][]"
+  ],
+  "returns": "int"
+ },
+ "206": {
+  "className": "Solution",
+  "method": "reverseList",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "ListNode"
+ },
+ "207": {
+  "className": "Solution",
+  "method": "canFinish",
+  "params": [
+   "int",
+   "int[][]"
+  ],
+  "returns": "boolean"
+ },
+ "208": {
+  "kind": "ops",
+  "className": "Trie"
+ },
+ "215": {
+  "className": "Solution",
+  "method": "findKthLargest",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "226": {
+  "className": "Solution",
+  "method": "invertTree",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "TreeNode"
+ },
+ "230": {
+  "className": "Solution",
+  "method": "kthSmallest",
+  "params": [
+   "TreeNode",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "234": {
+  "className": "Solution",
+  "method": "isPalindrome",
+  "params": [
+   "ListNode"
+  ],
+  "returns": "boolean"
+ },
+ "236": {
+  "className": "Solution",
+  "method": "lowestCommonAncestor",
+  "params": [
+   "TreeNode",
+   "TreeNode",
+   "TreeNode"
+  ],
+  "returns": "TreeNode"
+ },
+ "238": {
+  "className": "Solution",
+  "method": "productExceptSelf",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int[]"
+ },
+ "239": {
+  "className": "Solution",
+  "method": "maxSlidingWindow",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int[]"
+ },
+ "240": {
+  "className": "Solution",
+  "method": "searchMatrix",
+  "params": [
+   "int[][]",
+   "int"
+  ],
+  "returns": "boolean"
+ },
+ "279": {
+  "className": "Solution",
+  "method": "numSquares",
+  "params": [
+   "int"
+  ],
+  "returns": "int"
+ },
+ "283": {
+  "className": "Solution",
+  "method": "moveZeroes",
+  "params": [
+   "int[]"
+  ],
+  "returns": "void"
+ },
+ "287": {
+  "className": "Solution",
+  "method": "findDuplicate",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "295": {
+  "kind": "ops",
+  "className": "MedianFinder"
+ },
+ "300": {
+  "className": "Solution",
+  "method": "lengthOfLIS",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int"
+ },
+ "322": {
+  "className": "Solution",
+  "method": "coinChange",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "347": {
+  "className": "Solution",
+  "method": "topKFrequent",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int[]"
+ },
+ "394": {
+  "className": "Solution",
+  "method": "decodeString",
+  "params": [
+   "String"
+  ],
+  "returns": "String"
+ },
+ "416": {
+  "className": "Solution",
+  "method": "canPartition",
+  "params": [
+   "int[]"
+  ],
+  "returns": "boolean"
+ },
+ "437": {
+  "className": "Solution",
+  "method": "pathSum",
+  "params": [
+   "TreeNode",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "438": {
+  "className": "Solution",
+  "method": "findAnagrams",
+  "params": [
+   "String",
+   "String"
+  ],
+  "returns": "List<Integer>"
+ },
+ "543": {
+  "className": "Solution",
+  "method": "diameterOfBinaryTree",
+  "params": [
+   "TreeNode"
+  ],
+  "returns": "int"
+ },
+ "560": {
+  "className": "Solution",
+  "method": "subarraySum",
+  "params": [
+   "int[]",
+   "int"
+  ],
+  "returns": "int"
+ },
+ "739": {
+  "className": "Solution",
+  "method": "dailyTemperatures",
+  "params": [
+   "int[]"
+  ],
+  "returns": "int[]"
+ },
+ "763": {
+  "className": "Solution",
+  "method": "partitionLabels",
+  "params": [
+   "String"
+  ],
+  "returns": "List<Integer>"
+ },
+ "994": {
+  "className": "Solution",
+  "method": "orangesRotting",
+  "params": [
+   "int[][]"
+  ],
+  "returns": "int"
+ },
+ "1143": {
+  "className": "Solution",
+  "method": "longestCommonSubsequence",
+  "params": [
+   "String",
+   "String"
+  ],
+  "returns": "int"
+ }
+}

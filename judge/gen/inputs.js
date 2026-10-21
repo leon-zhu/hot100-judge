@@ -3,7 +3,7 @@
 /**
  * 输入生成器：带种子 PRNG + 类型驱动生成 + 约束 flag 引擎 + 从内置用例自动推导默认规格。
  *
- * 生成出来的 args 直接对齐 core-driver 的输入约定：
+ * 生成出来的 args 直接对齐 Java 驱动的输入约定：
  *   - 标量 / 数组：原生 JSON 值
  *   - 链表 / 树 / 矩阵等记号类型：字符串记号（"list:[1,2,3]" / "tree:[...]" / "grid:[\"11\",\"10\"]"…）
  *   - ops 型：{ ops:[...], args:[[...],...] }
@@ -125,7 +125,7 @@ function genGrid(rand, spec) {
   return out;
 }
 
-// ---- 结构类型：生成 JSON，再包装成 core-driver 记号字符串 ----
+// ---- 结构类型：生成 JSON，再包装成 Java 驱动记号字符串 ----
 function genListToken(rand, spec) {
   return 'list:' + JSON.stringify(genIntArray(rand, spec));
 }
@@ -253,7 +253,7 @@ function allDistinct(a) {
   return true;
 }
 
-// 推导出的数值范围统一钳制在 ±INT_BOUND：既避免超 int32 造成 C++/Java 溢出
+// 推导出的数值范围统一钳制在 ±INT_BOUND：避免超 int32 造成 Java 溢出
 // （如 #98 的样例含 2147483647 会把范围放大到 4.3e9），又保留足够的取值多样性。
 const INT_BOUND = 1000000;
 function widenRange(minV, maxV) {

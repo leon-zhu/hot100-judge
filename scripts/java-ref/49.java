@@ -2,7 +2,7 @@
 import java.util.*;
 
 class Solution {
-    public String[][] groupAnagrams(String[] strs) {
+    public List<List<String>> groupAnagrams(String[] strs) {
         // 核心思路：把每个字符串排序得到统一键，哈希表按键分组
         // 键首次出现时新建分组并记录组下标
         // 时间复杂度 O(n * k log k)，空间复杂度 O(n * k)
@@ -18,10 +18,6 @@ class Solution {
             }
             groups.get(idx.get(key)).add(s);
         }
-        String[][] res = new String[groups.size()][];
-        for (int i = 0; i < groups.size(); i++) {
-            res[i] = groups.get(i).toArray(new String[0]);
-        }
-        return res;
+        return groups;
     }
 }

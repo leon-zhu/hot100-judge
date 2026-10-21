@@ -2,7 +2,7 @@
 import java.util.*;
 
 class Solution {
-    public boolean wordBreak(String s, String[] wordDict) {
+    public boolean wordBreak(String s, List<String> wordDict) {
         // 算法思路：动态规划。dp[i] 表示 s 的前 i 个字符能否由字典单词拼接，
         // 转移时枚举最后一段的起点 j，要求 dp[j] 为真且子串在字典中。
         // 关键点：字典转 HashSet 加速查找；用 max_len 剪枝枚举范围。

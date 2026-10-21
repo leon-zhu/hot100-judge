@@ -6,9 +6,9 @@ class Solution {
     // 关键:记录每层节点数 sz,弹出到最后一个时记录值
     // 易错:空树直接返回空结果
     // 复杂度:时间 O(n),空间 O(n)
-    public int[] rightSideView(TreeNode root) {
+    public List<Integer> rightSideView(TreeNode root) {
         List<Integer> out = new ArrayList<>();
-        if (root == null) return new int[0];
+        if (root == null) return out;
         Queue<TreeNode> q = new ArrayDeque<>();
         q.add(root);
         while (!q.isEmpty()) {
@@ -20,8 +20,6 @@ class Solution {
                 if (cur.right != null) q.add(cur.right);
             }
         }
-        int[] res = new int[out.size()];
-        for (int i = 0; i < out.size(); i++) res[i] = out.get(i);
-        return res;
+        return out;
     }
 }

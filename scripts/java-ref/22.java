@@ -2,7 +2,7 @@
 import java.util.*;
 
 class Solution {
-    public String[] generateParenthesis(int n) {
+    public List<String> generateParenthesis(int n) {
         // 核心思路: 回溯生成合法括号串，任何前缀的右括号数都不超过左括号数。
         // 关键步骤: openCnt 与 closeCnt 统计已放括号数，长度到 2n 时收束。
         // 易错点: 只有 closeCnt 小于 openCnt 时才允许放右括号，保证合法性。
@@ -10,7 +10,7 @@ class Solution {
         List<String> res = new ArrayList<>();
         char[] path = new char[2 * n];
         dfs(0, 0, 0, path, res);
-        return res.toArray(new String[0]);
+        return res;
     }
     void dfs(int openCnt, int closeCnt, int len, char[] path, List<String> res) {
         int n = path.length / 2;

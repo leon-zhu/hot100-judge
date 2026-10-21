@@ -1,12 +1,11 @@
 'use strict';
 
 /**
- * 全量扩展用例验证：
- *   遍历 100 题生成扩展用例，再用题库自带 Python3 / C++ / Java 三份参考题解各跑一遍，
+ * 全量扩展用例验证（Java-only）：
+ *   遍历 100 题生成扩展用例，再用题库自带 Java 参考题解跑一遍，
  *   断言「参考题解全过」——参考题解都过不了说明生成的用例有歧义/非法（会误伤正确解）。
  *
- *   node scripts/verify-extend-all.js            # 三语言全量
- *   node scripts/verify-extend-all.js py         # 只跑 python3
+ *   node scripts/verify-extend-all.js
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,19 +13,8 @@ const { generateExtendedTests } = require('../judge/extend-tests');
 const { judgeCore } = require('../judge/judge');
 
 const ROOT = path.join(__dirname, '..');
-const problems = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/problems.json'), 'utf8'));
-const solutions = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/solutions.json'), 'utf8'));
-
-const LANGS = process.argv[2] === 'py'
-  ? ['python3']
-  : (process.argv.slice(2).filter((x) => ['python3', 'cpp', 'java'].includes(x)).length
-    ? process.argv.slice(2)
-    : ['python3', 'cpp', 'java']);
-
-function refFor(id, lang) {
-  const s = solutions[String(id)];
-  return s && s[lang] && s[lang].core;
-}
+const problems = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/problems.json'), 'utf8'));
+const solutions = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/solutions.json'), 'utf8'));
 
 async function main() {
   const report = [];
@@ -36,13 +24,15 @@ async function main() {
     const cases = ext.core || [];
     const row = { id: p.id, title: p.title, n: cases.length, refUnusable: ext.refUnusable, low: ext.lowCoverage, fails: {} };
     if (!cases.length) { report.push(row); continue; }
-    for (const lang of LANGS) {
-      const code = refFor(p.id, lang);
-      if (!code) { row.fails[lang] = 'NO_REF'; continue; }
-      const r = await judgeCore({ language: lang, code, core: p.core, tests: cases, problemId: p.id });
-      if (r.error) { row.fails[lang] = 'RUN:' + String(r.error).slice(0, 80); continue; }
-      const bad = r.results.filter((x) => !x.ok);
-      if (bad.length) row.fails[lang] = `${bad.length}/${r.results.length}`;
+    const code = solutions[String(p.id)] && solutions[String(p.id)].java && solutions[String(p.id)].java.core;
+    if (!code) { row.fails.java = 'NO_REF'; }
+    else {
+      const r = await judgeCore({ code, core: p.core, tests: cases, problemId: p.id });
+      if (r.error) row.fails.java = 'RUN:' + String(r.error).slice(0, 80);
+      else {
+        const bad = r.results.filter((x) => !x.ok);
+        if (bad.length) row.fails.java = `${bad.length}/${r.results.length}`;
+      }
     }
     report.push(row);
     const mark = Object.keys(row.fails).length ? '❌' : '✅';

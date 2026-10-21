@@ -1,23 +1,5 @@
 {
   "23": {
-    "acm": [
-      {
-        "input": "3\n3 1 4 5\n3 1 3 4\n2 2 6\n",
-        "output": "1 1 2 3 4 4 5 6\n"
-      },
-      {
-        "input": "2\n0\n1 1\n",
-        "output": "1\n"
-      },
-      {
-        "input": "0\n",
-        "output": "\n"
-      },
-      {
-        "input": "2\n3 1 1 1\n3 1 1 1\n",
-        "output": "1 1 1 1 1 1\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -64,28 +46,6 @@
     ]
   },
   "25": {
-    "acm": [
-      {
-        "input": "5 2\n1 2 3 4 5\n",
-        "output": "2 1 4 3 5\n"
-      },
-      {
-        "input": "5 3\n1 2 3 4 5\n",
-        "output": "3 2 1 4 5\n"
-      },
-      {
-        "input": "4 5\n1 2 3 4\n",
-        "output": "1 2 3 4\n"
-      },
-      {
-        "input": "0 1\n",
-        "output": "\n"
-      },
-      {
-        "input": "5 1\n1 2 3 4 5\n",
-        "output": "1 2 3 4 5\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -125,24 +85,6 @@
     ]
   },
   "94": {
-    "acm": [
-      {
-        "input": "3\n1 null 2 3\n",
-        "output": "1 2\n"
-      },
-      {
-        "input": "3\n1 2 3\n",
-        "output": "2 1 3\n"
-      },
-      {
-        "input": "1\n5\n",
-        "output": "5\n"
-      },
-      {
-        "input": "0\n",
-        "output": "\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -194,24 +136,6 @@
     ]
   },
   "101": {
-    "acm": [
-      {
-        "input": "7\n1 2 2 3 4 4 3\n",
-        "output": "true\n"
-      },
-      {
-        "input": "5\n1 2 2 null 3 null 3\n",
-        "output": "false\n"
-      },
-      {
-        "input": "3\n1 2 null\n",
-        "output": "false\n"
-      },
-      {
-        "input": "0\n",
-        "output": "true\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -246,24 +170,6 @@
     ]
   },
   "104": {
-    "acm": [
-      {
-        "input": "7\n3 9 20 null null 15 7\n",
-        "output": "3\n"
-      },
-      {
-        "input": "2\n1 null 2\n",
-        "output": "1\n"
-      },
-      {
-        "input": "1\n1\n",
-        "output": "1\n"
-      },
-      {
-        "input": "0\n",
-        "output": "0\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -298,24 +204,6 @@
     ]
   },
   "138": {
-    "acm": [
-      {
-        "input": "5\n7 -1\n13 0\n11 4\n10 2\n1 0\n",
-        "output": "7 -1\n13 0\n11 4\n10 2\n1 0\n"
-      },
-      {
-        "input": "2\n1 1\n2 1\n",
-        "output": "1 1\n2 1\n"
-      },
-      {
-        "input": "1\n1 0\n",
-        "output": "1 0\n"
-      },
-      {
-        "input": "0\n",
-        "output": ""
-      }
-    ],
     "core": [
       {
         "args": [
@@ -350,20 +238,6 @@
     ]
   },
   "146": {
-    "acm": [
-      {
-        "input": "2 9\nput 1 1\nput 2 2\nget 1\nput 3 3\nget 2\nput 4 4\nget 1\nget 3\nget 4\n",
-        "output": "1\n-1\n-1\n3\n4\n"
-      },
-      {
-        "input": "1 3\nget 1\nput 1 1\nget 1\n",
-        "output": "-1\n1\n"
-      },
-      {
-        "input": "2 5\nput 1 1\nput 2 2\nput 1 3\nget 1\nget 2\n",
-        "output": "3\n2\n"
-      }
-    ],
     "core": [
       {
         "ops": [
@@ -586,24 +460,6 @@
     ]
   },
   "148": {
-    "acm": [
-      {
-        "input": "4\n4 2 1 3\n",
-        "output": "1 2 3 4\n"
-      },
-      {
-        "input": "5\n-1 5 3 4 0\n",
-        "output": "-1 0 3 4 5\n"
-      },
-      {
-        "input": "1\n7\n",
-        "output": "7\n"
-      },
-      {
-        "input": "0\n",
-        "output": "\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -638,24 +494,6 @@
     ]
   },
   "226": {
-    "acm": [
-      {
-        "input": "7\n4 2 7 1 3 6 9\n",
-        "output": "4 7 2 9 6 3 1\n"
-      },
-      {
-        "input": "2\n1 2\n",
-        "output": "1 null 2\n"
-      },
-      {
-        "input": "3\n1 null 2\n",
-        "output": "1 2\n"
-      },
-      {
-        "input": "0\n",
-        "output": "\n"
-      }
-    ],
     "core": [
       {
         "args": [
@@ -690,24 +528,6 @@
     ]
   },
   "543": {
-    "acm": [
-      {
-        "input": "5\n1 2 3 4 5\n",
-        "output": "3\n"
-      },
-      {
-        "input": "7\n1 2 3 4 5 6 7\n",
-        "output": "4\n"
-      },
-      {
-        "input": "1\n1\n",
-        "output": "0\n"
-      },
-      {
-        "input": "0\n",
-        "output": "0\n"
-      }
-    ],
     "core": [
       {
         "args": [

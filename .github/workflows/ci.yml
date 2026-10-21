@@ -8,51 +8,57 @@ on:
 
 jobs:
   verify:
-    name: 评测管线与题库验证
+    name: 评测管线与题库验证（Java-only）
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: 环境检查
         run: |
           node --version
-          python3 --version
-          gcc --version | head -1
-          g++ --version | head -1
           java -version 2>&1 | head -1
           javac -version 2>&1 | head -1
 
-      - name: 评测管线自测（驱动生成：链表/树/矩阵/ops）
-        run: node scripts/test-judge.js
+      - name: 语法检查
+        run: |
+          for f in cli/hot100.js judge/*.js judge/gen/*.js scripts/*.js; do
+            node --check "$f"
+          done
 
-      - name: 扩展用例生成回归（sol-3 / LRU 反例必须被判失败）
-        run: node scripts/test-extend.js
-
-      - name: 数据结构与 JSON 完整性检查
+      - name: 数据完整性检查（Java-only）
         run: |
           node -e "
-            const p = require('./public/data/problems.json');
-            const t = require('./public/data/tests.json');
-            const s = require('./public/data/solutions.json');
-            const missP = p.filter(x => !x.core || !x.explain);
-            const missT = p.filter(x => !t[x.id] || !t[x.id].acm || !t[x.id].core);
-            const missS = p.filter(x => !s[x.id] || !s[x.id].python3 || !s[x.id].cpp || !s[x.id].java);
-            if (missP.length || missT.length || missS.length) {
-              console.error('数据不完整', missP.map(x=>x.id), missT.map(x=>x.id), missS.map(x=>x.id));
+            const p = require('./data/problems.json');
+            const t = require('./data/tests.json');
+            const s = require('./data/solutions.json');
+            const badP = p.filter(x => !x.core || x.acm || !x.explain || x.core.templates);
+            const badT = p.filter(x => !t[x.id] || !t[x.id].core || t[x.id].acm || t[x.id].core.length < 3);
+            const badS = p.filter(x => !s[x.id] || !s[x.id].java || !s[x.id].java.core || s[x.id].python3 || s[x.id].cpp);
+            if (p.length !== 100 || badP.length || badT.length || badS.length) {
+              console.error('数据不完整', p.length, badP.map(x=>x.id), badT.map(x=>x.id), badS.map(x=>x.id));
               process.exit(1);
             }
-            console.log('✅ 100 题数据完整（core/explain/测试用例/题解含 java）');
+            console.log('✅ 100 题数据完整（Java-only，core 用例 + Java 参考题解）');
           "
 
-      - name: 全量题解验证（100 题 × ACM/核心 × Python3/C++/Java，真实编译运行）
-        run: node scripts/verify-parts.js all
-
-      - name: Java 驱动验证（100 题桩冒烟 + 100 份参考题解）
+      - name: Java 驱动 + 100 份参考题解 + 官方签名
         run: node scripts/verify-java.js
 
-      - name: 全量扩展用例验证（100 题，Python3/C++/Java 参考题解全过）
-        run: node scripts/verify-extend-all.js
+      - name: 驱动边界测试（List/节点语义/顺序无关）
+        run: node scripts/test-judge.js
 
-      - name: 前端语法检查
-        run: node --check public/app.js && node --check server.js
+      - name: 扩展用例生成回归（Java oracle）
+        run: node scripts/test-extend.js
+
+      - name: 全量扩展用例验证（100 题）
+        run: node scripts/verify-extend-all.js

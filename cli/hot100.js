@@ -6,12 +6,11 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const DATA = {
-  problems: JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/problems.json'), 'utf8')),
-  solutions: JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/solutions.json'), 'utf8')),
-  tests: JSON.parse(fs.readFileSync(path.join(ROOT, 'public/data/tests.json'), 'utf8')),
+  problems: JSON.parse(fs.readFileSync(path.join(ROOT, 'data/problems.json'), 'utf8')),
+  solutions: JSON.parse(fs.readFileSync(path.join(ROOT, 'data/solutions.json'), 'utf8')),
+  tests: JSON.parse(fs.readFileSync(path.join(ROOT, 'data/tests.json'), 'utf8')),
 };
-// Java 类型词汇与评测驱动共用同一来源（bool→boolean、list→ListNode、grid→char[][]…）
-const { JAVA_TYPE } = require(path.join(ROOT, 'judge', 'java-driver'));
+const { resolveJavaSignature, javaZeroLiteral, javaNeededTypes } = require(path.join(ROOT, 'judge', 'java-signatures'));
 
 const STATE_FILE = path.join(ROOT, 'work', 'cli-state.json');
 function loadState() {
@@ -116,14 +115,15 @@ function cmdRandom(flags) {
 }
 
 // ---- show ----
-function coreSignature(core) {
-  if (core.kind === 'ops') {
-    const ctor = (core.ops.constructor || []).map((p) => `${p.type} ${p.name}`).join(', ');
-    const methods = (core.ops.methods || []).map((m) => `    public ${m.ret || 'void'} ${m.name}(${m.args.map((t, i) => t + ' a' + i).join(', ')})`);
-    return `class ${core.className}(${ctor})\n` + methods.join('\n');
+function coreSignature(p) {
+  const sig = resolveJavaSignature(p.id, p.core);
+  if (sig.kind === 'ops') {
+    const ctor = sig.ops.constructor.map((x) => `${x.javaType} ${x.name}`).join(', ');
+    const methods = sig.ops.methods.map((m) => `    public ${m.javaRet} ${m.name}(${m.args.map((a, i) => `${a.javaType} a${i}`).join(', ')})`);
+    return `class ${sig.className}(${ctor})\n` + methods.join('\n');
   }
-  const params = core.params.map((p) => `${p.type} ${p.name}${p.desc ? '  // ' + p.desc : ''}`).join('\n      ');
-  return `class ${core.className} {\n    public ${core.returns} ${core.method}(${core.params.map((p) => p.type + ' ' + p.name).join(', ')})\n}`;
+  const params = sig.params.map((x) => `${x.javaType} ${x.name}`).join(', ');
+  return `class ${sig.className} {\n    public ${sig.returns.javaType} ${sig.method}(${params})\n}`;
 }
 
 function companyTags(p) {
@@ -142,25 +142,12 @@ function cmdShow(flags, positional) {
   console.log(`\n题目描述:\n${p.desc}`);
   if (p.core) {
     console.log(`\n核心代码模式（${p.core.kind === 'ops' ? '类' : '函数'}）:`);
-    console.log(coreSignature(p.core));
-  }
-  if (p.acm) {
-    console.log(`\nACM 模式输入:`);
-    console.log(p.acm.input);
-    console.log(`ACM 模式输出:`);
-    console.log(p.acm.output);
-    if (p.acm.examples && p.acm.examples[0]) {
-      console.log(`示例:\n  输入: ${p.acm.examples[0].input}\n  输出: ${p.acm.examples[0].output}`);
-    }
+    console.log(coreSignature(p));
   }
   // 解题思路与参考题解默认不展示，加 --explain 追加
   if (flags.explain) {
     if (p.explain) console.log(`\n解题思路:\n${p.explain}`);
     const sol = DATA.solutions[String(p.id)];
-    if (sol && sol.python3 && sol.python3.core) {
-      console.log(`\n参考题解 · Python3（核心代码模式）:`);
-      console.log(sol.python3.core);
-    }
     if (sol && sol.java && sol.java.core) {
       console.log(`\n参考题解 · Java（核心代码模式）:`);
       console.log(sol.java.core);
@@ -168,19 +155,6 @@ function cmdShow(flags, positional) {
   } else {
     console.log(`\n提示: 加 --explain 查看解题思路与参考题解`);
   }
-}
-
-const LANG_EXT = { java: 'java', python3: 'py', cpp: 'cpp' };
-const EXT_LANG = { java: 'java', py: 'python3', cpp: 'cpp' };
-
-function zeroLiteral(type) {
-  const m = {
-    int: '0', double: '0.0', bool: 'false', string: '""',
-    'int[]': 'new int[0]', 'int[][]': 'new int[0][]',
-    'string[]': 'new String[0]', 'string[][]': 'new String[0][]',
-    grid: 'new char[0][]', list: 'null', tree: 'null', randomList: 'null',
-  };
-  return m[type] || 'null';
 }
 
 // 评测驱动（judge/java-driver.js 生成的 Main.java）已注入这些类型。
@@ -223,68 +197,43 @@ const JAVA_TYPE_DEFS = {
  */`,
 };
 
-function javaNeededTypes(core) {
-  const found = new Set();
-  const add = (t) => {
-    if (t === 'list' || t === 'cycleList' || t === 'intersectList' || t === 'listArray') found.add('ListNode');
-    else if (t === 'tree') found.add('TreeNode');
-    else if (t === 'randomList') found.add('Node');
-  };
-  if (core.kind === 'ops') {
-    (core.ops.constructor || []).forEach((x) => add(x.type));
-    (core.ops.methods || []).forEach((m) => { (m.args || []).forEach(add); add(m.ret); });
-  } else {
-    (core.params || []).forEach((x) => add(x.type));
-    add(core.returns);
-  }
-  return [...found];
-}
-
-function initTemplate(p, lang) {
+function initTemplate(p) {
   const core = p.core;
   if (!core) die('该题无核心代码模式数据，无法生成模板');
-  if (lang === 'java') {
-    const jtype = (t) => JAVA_TYPE[t] || t;
-    // 该题依赖的、由评测环境提供的类型定义（注释形式，便于对照）
-    const defs = javaNeededTypes(core).map((t) => JAVA_TYPE_DEFS[t]).join('\n\n');
-    const defsBlock = defs ? defs + '\n\n' : '';
-    if (core.kind === 'ops') {
-      const ctor = (core.ops.constructor || []).map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
-      const methods = (core.ops.methods || []).map((m) =>
-        `    public ${jtype(m.ret)} ${m.name}(${m.args.map((t, i) => jtype(t) + ' a' + i).join(', ')}) {${m.ret && m.ret !== 'void' ? ' return ' + zeroLiteral(m.ret) + ';' : ''} }`).join('\n');
-      return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\nclass ${core.className} {\n    public ${core.className}(${ctor}) {}\n${methods}\n}\n`;
-    }
-    const params = core.params.map((x) => `${jtype(x.type)} ${x.name}`).join(', ');
-    const body = core.returns === 'void' || (core.mutates != null && core.mutates >= 0) ? '' : `return ${zeroLiteral(core.returns)};`;
-    return `${defsBlock}import java.util.*;\n\n// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\nclass ${core.className} {\n    public ${jtype(core.returns)} ${core.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
+  const sig = resolveJavaSignature(p.id, core);
+  // 该题依赖的、由评测环境提供的类型定义（注释形式，便于对照）
+  const defs = javaNeededTypes(sig).map((t) => JAVA_TYPE_DEFS[t]).join('\n\n');
+  const defsBlock = defs ? defs + '\n\n' : '';
+  const header = `// Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}`;
+
+  if (sig.kind === 'ops') {
+    const ctor = sig.ops.constructor.map((x) => `${x.javaType} ${x.name}`).join(', ');
+    const methods = sig.ops.methods.map((m) =>
+      `    public ${m.javaRet} ${m.name}(${m.args.map((a, i) => `${a.javaType} a${i}`).join(', ')}) {${m.javaRet !== 'void' ? ' return ' + javaZeroLiteral(m.javaRet) + ';' : ''} }`).join('\n');
+    return `${defsBlock}import java.util.*;\n\n${header}\nclass ${sig.className} {\n    public ${sig.className}(${ctor}) {}\n${methods}\n}\n`;
   }
-  // python3 / cpp：直接用题库自带的 core.templates（含 ops 类模板），保证签名与评测驱动一致
-  const tpl = core.templates && core.templates[lang];
-  if (!tpl) die(`该题暂无 ${lang} 核心代码模板`);
-  const cmt = lang === 'python3' ? '#' : '//';
-  return `${cmt} Hot100 #${p.id} ${p.title}（${p.difficulty}）· ${p.topic}\n${tpl}`;
+
+  const params = sig.params.map((x) => `${x.javaType} ${x.name}`).join(', ');
+  const body = sig.returns.javaType === 'void' || sig.mutates >= 0 ? '' : `return ${javaZeroLiteral(sig.returns.javaType)};`;
+  return `${defsBlock}import java.util.*;\n\n${header}\nclass ${sig.className} {\n    public ${sig.returns.javaType} ${sig.method}(${params}) {\n        // TODO: 实现\n        ${body}\n    }\n}\n`;
 }
 
 async function cmdJudge(flags, positional) {
   const id = positional[0];
   const file = positional[1];
-  if (!file) die('用法: hot100 judge <id> <文件> [--lang java|python3|cpp] [--mode core|acm] [--cloud] [--regenerate] [--no-extend]');
+  if (!file) die('用法: hot100 judge <id> <文件> [--cloud] [--regenerate] [--no-extend]');
+  if (path.extname(file).toLowerCase() !== '.java') die('仅支持 Java（.java）文件');
   const p = findProblem(id);
   let code;
   try { code = fs.readFileSync(file, 'utf8'); } catch { die(`文件不存在: ${file}`); }
-  const ext = path.extname(file).slice(1).toLowerCase();
-  const lang = flags.lang || EXT_LANG[ext] || 'java';
-  const mode = flags.mode || 'core';
-  if (lang === 'java' && mode !== 'core') die('Java 仅支持核心代码模式（--mode core）');
-  const useCore = mode === 'core' || lang === 'java';
-  if (useCore && !p.core) die('该题无核心代码模式数据');
-  const bundled = DATA.tests[String(p.id)] ? DATA.tests[String(p.id)][mode] : [];
-  if (!bundled || !bundled.length) die(`该题无 ${mode} 测试用例`);
+  if (!p.core) die('该题无核心代码模式数据');
+  const bundled = DATA.tests[String(p.id)] ? DATA.tests[String(p.id)].core : [];
+  if (!bundled || !bundled.length) die('该题无核心代码测试用例');
 
-  // 扩展用例：core 模式才合并；--no-extend 跳过；--regenerate 强制重建
+  // 扩展用例：--no-extend 跳过；--regenerate 强制重建
   let extended = [];
   let hasExt = false;
-  if (useCore && !flags['no-extend']) {
+  if (!flags['no-extend']) {
     const { loadExtendedTests, generateExtendedTests } = require(path.join(ROOT, 'judge', 'extend-tests'));
     let cache = flags.regenerate ? null : loadExtendedTests(String(p.id));
     if (!cache) {
@@ -299,11 +248,9 @@ async function cmdJudge(flags, positional) {
   const tests = [...bundled, ...extended];
   const nBundled = bundled.length;
 
-  const { judgeCore, judgeACM, summarize } = require(path.join(ROOT, 'judge', 'judge'));
-  const outcome = useCore
-    ? await judgeCore({ language: lang, code, core: p.core, tests, problemId: p.id })
-    : await judgeACM({ language: lang, code, tests });
-  console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · ${lang} · ${mode === 'core' ? '核心代码模式' : 'ACM 模式'}${hasExt ? ` · 含 ${extended.length} 个扩展用例` : ''}`);
+  const { judgeCore, summarize } = require(path.join(ROOT, 'judge', 'judge'));
+  const outcome = await judgeCore({ code, core: p.core, tests, problemId: p.id });
+  console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · java · 核心代码模式${hasExt ? ` · 含 ${extended.length} 个扩展用例` : ''}`);
   if (outcome.error) {
     console.error(`✗ ${outcome.phase === 'compile' ? '编译失败' : '运行失败'}`);
     if (outcome.compileError) console.error(outcome.compileError);
@@ -311,20 +258,16 @@ async function cmdJudge(flags, positional) {
     process.exitCode = 1;
     return;
   }
-  const { passed, total } = summarize(outcome.results, mode);
+  const { passed, total } = summarize(outcome.results, 'core');
   const failed = outcome.results.filter((r) => !r.ok);
   for (const r of failed.slice(0, 5)) {
     const kind = r.index < nBundled ? '内置' : '扩展';
     console.error(`  [用例 ${r.index}·${kind}] ${r.error ? r.error.split('\n')[0] : ''}`);
     const t = tests[r.index];
-    if (useCore) {
-      const parts = [];
-      if (t && t.ops) parts.push(`ops=${JSON.stringify(t.ops)}`);
-      if (t && t.args) parts.push(`args=${JSON.stringify(t.args)}`);
-      if (parts.length) console.error(`      输入: ${parts.join(' ')}`);
-    } else if (t) {
-      console.error(`      输入: ${JSON.stringify(t.input)}`);
-    }
+    const parts = [];
+    if (t && t.ops) parts.push(`ops=${JSON.stringify(t.ops)}`);
+    if (t && t.args) parts.push(`args=${JSON.stringify(t.args)}`);
+    if (parts.length) console.error(`      输入: ${parts.join(' ')}`);
     if (r.expected !== undefined && r.got !== undefined) {
       console.error(`      期望: ${JSON.stringify(r.expected)}  实际: ${JSON.stringify(r.got)}`);
     }
@@ -338,24 +281,21 @@ async function cmdJudge(flags, positional) {
     process.exitCode = 1;
   }
 
-  // 云端判定（仅核心代码模式；失败非致命，不影响本地退出码）
+  // 云端判定（失败非致命，不影响本地退出码）
   if (flags.cloud) {
-    if (!useCore) {
-      console.warn('  云端判定仅支持核心代码模式（--mode core），已跳过');
-    } else {
-      try {
-        const { submitToLeetCode } = require(path.join(ROOT, 'judge', 'leetcode-submit'));
-        const verdict = await submitToLeetCode({ problem: p, code, lang });
-        if (verdict.error) {
-          console.warn(`  ⚠ 云端判定失败: ${verdict.error}`);
-        } else {
-          const mark = verdict.accepted ? '✅' : '❌';
-          console.log(`  ${mark} LeetCode: ${verdict.statusMsg}`);
-          if (verdict.detail) console.log(`     ${verdict.detail}`);
-        }
-      } catch (e) {
-        console.warn(`  ⚠ 云端判定不可用: ${e.message}`);
+    try {
+      const { submitToLeetCode } = require(path.join(ROOT, 'judge', 'leetcode-submit'));
+      const verdict = await submitToLeetCode({ problem: p, code });
+      if (verdict.error) {
+        console.warn(`  ⚠ 云端判定失败: ${verdict.error}`);
+      } else {
+        const mark = verdict.accepted ? '✅' : '❌';
+        console.log(`  ${mark} LeetCode: ${verdict.statusMsg}`);
+        if (verdict.detail) console.log(`     ${verdict.detail}`);
+        if (verdict.note) console.log(`     ${verdict.note}`);
       }
+    } catch (e) {
+      console.warn(`  ⚠ 云端判定不可用: ${e.message}`);
     }
   }
 }
@@ -367,12 +307,10 @@ async function cmdLogin(flags) {
 
 function cmdInit(flags, positional) {
   const id = positional[0];
-  if (!id) die('用法: hot100 init <id> [--lang java|python3|cpp]');
+  if (!id) die('用法: hot100 init <id>');
   const p = findProblem(id);
-  const lang = flags.lang || 'java';
-  const ext = LANG_EXT[lang];
-  const file = `sol-${id}.${ext}`;
-  fs.writeFileSync(file, initTemplate(p, lang));
+  const file = `sol-${id}.java`;
+  fs.writeFileSync(file, initTemplate(p));
   console.log(`已生成 ${file}（hot100 judge ${id} ${file} 即可评测）`);
 }
 
@@ -415,8 +353,10 @@ function cmdProgress() {
 }
 
 function usage(code = 1) {
-  console.log(`Hot100 刷题命令行工具 —— LeetCode Hot 100 本地刷题工作台
-题库 100 题 / 959 测试用例 / 400 份题解，纯本地离线可用。
+  const coreTests = DATA.problems.reduce((n, p) => n + ((DATA.tests[String(p.id)] && DATA.tests[String(p.id)].core) || []).length, 0);
+  const solutionCount = Object.keys(DATA.solutions).length;
+  console.log(`Hot100 刷题命令行工具 —— LeetCode Hot 100 本地刷题工作台（Java-only）
+题库 ${DATA.problems.length} 题 / ${coreTests} 测试用例 / ${solutionCount} 份 Java 参考题解，纯本地离线可用。
 
 用法:  hot100 <命令> [参数]
 
@@ -427,10 +367,10 @@ function usage(code = 1) {
       示例: hot100 list --top 20
            hot100 list --company 字节跳动 --difficulty 中等 --sort rank
 
-  show <题号> [--explain]      题目详情（描述/核心签名/ACM/CodeTop 高频）
-      加 --explain 追加解题思路与参考题解
+  show <题号> [--explain]      题目详情（描述/官方 Java 签名/CodeTop 高频）
+      加 --explain 追加解题思路与 Java 参考题解
       示例: hot100 show 1            # 只看题目信息
-           hot100 show 1 --explain   # 附带解题思路与 Python3/Java 参考题解
+           hot100 show 1 --explain   # 附带解题思路与 Java 参考题解
 
   search <关键词>               按标题/描述/专题搜索
       示例: hot100 search 最长
@@ -446,13 +386,13 @@ function usage(code = 1) {
       --browser     跳过导入，直接打开浏览器登录
       示例: hot100 login
 
-  init <题号> [--lang java|python3|cpp]   生成模板文件（默认 Java）
-      模板含正确的方法签名与 import，可直接开始写
-      示例: hot100 init 1 --lang java
+  init <题号>                 生成 Java 模板（sol-<id>.java）
+      模板使用力扣官方 Java 签名，含 import，可直接开始写
+      旧版简化签名文件不兼容，可重新 init 后迁移代码
+      示例: hot100 init 1
 
-  judge <题号> <文件> [--lang X] [--mode core|acm]   提交答案评测
-      语言按扩展名推断（.java/.py/.cpp），--mode 默认 core
-      自动合并本地扩展测试用例（首次自动生成缓存，可 --regenerate 重建）
+  judge <题号> <文件> [选项]   提交 Java 答案评测（仅核心代码模式）
+      自动合并本地扩展测试用例（首次用 Java 参考题解生成缓存，可 --regenerate 重建）
       通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际（标注内置/扩展）
       --cloud       本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie）
       --no-extend   只用内置用例

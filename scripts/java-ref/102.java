@@ -6,9 +6,9 @@ class Solution {
     // 关键:先记录本层大小 sz,循环 sz 次完成分层
     // 易错:空树直接返回空结果
     // 复杂度:时间 O(n),空间 O(n)
-    public int[][] levelOrder(TreeNode root) {
+    public List<List<Integer>> levelOrder(TreeNode root) {
         List<List<Integer>> out = new ArrayList<>();
-        if (root == null) return new int[0][];
+        if (root == null) return out;
         Queue<TreeNode> q = new ArrayDeque<>();
         q.add(root);
         while (!q.isEmpty()) {
@@ -22,13 +22,6 @@ class Solution {
             }
             out.add(level);
         }
-        int[][] res = new int[out.size()][];
-        for (int i = 0; i < out.size(); i++) {
-            List<Integer> l = out.get(i);
-            int[] a = new int[l.size()];
-            for (int j = 0; j < l.size(); j++) a[j] = l.get(j);
-            res[i] = a;
-        }
-        return res;
+        return out;
     }
 }

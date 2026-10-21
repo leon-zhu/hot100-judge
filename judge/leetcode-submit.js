@@ -89,7 +89,7 @@ async function check(auth, submissionId) {
   return res.json();
 }
 
-async function submitToLeetCode({ problem, code, lang }) {
+async function submitToLeetCode({ problem, code, lang = 'java' }) {
   const auth = getAuth();
   if (!auth) {
     return { error: '未配置登录态：设置环境变量 LEETCODE_SESSION/LEETCODE_CSRF_TOKEN，或写入 work/leetcode-config.json（见 docs/CLI_GUIDE.md）' };
@@ -100,6 +100,7 @@ async function submitToLeetCode({ problem, code, lang }) {
     if (!slug) return { error: `无法从题目 url 解析 slug: ${problem.url}` };
     const q = await graphql(auth, slug);
     if (!q || !q.questionId) return { error: '获取 questionId 失败（登录态可能失效）' };
+
     const s = await submit(auth, slug, q.questionId, lang, code);
     if (s.error) return s;
     const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -120,6 +121,9 @@ async function submitToLeetCode({ problem, code, lang }) {
       detail = '超时（Time Limit Exceeded）';
     } else if (r.status_code === 12) {
       detail = '内存超限（Memory Limit Exceeded）';
+    } else if (r.status_code === 15) {
+      detail = `运行错误: ${String(r.full_runtime_error || r.runtime_error || '').slice(0, 400)}`;
+      if (r.last_testcase != null) detail += `\n最后用例: ${String(r.last_testcase).slice(0, 300)}`;
     }
     return { accepted, statusMsg: r.status_msg || (accepted ? 'Accepted' : '失败'), detail };
   } catch (e) {

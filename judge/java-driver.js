@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * 核心代码模式的 Java 驱动生成器（镜像 core-driver.js 的 C++ 版）。
+ * 核心代码模式的 Java 驱动生成器（唯一驱动）。
  *
  * 评测时生成两个源文件：
  *   - ${core.className}.java  用户代码原样（如 Solution.java / LRUCache.java）
@@ -11,13 +11,7 @@
  * 输出 JSON 结果数组，与 judge.js 的 parseCoreResults 兼容。
  */
 
-const JAVA_TYPE = {
-  int: 'int', double: 'double', bool: 'boolean', string: 'String',
-  'int[]': 'int[]', 'int[][]': 'int[][]',
-  'string[]': 'String[]', 'string[][]': 'String[][]',
-  grid: 'char[][]', list: 'ListNode', tree: 'TreeNode', randomList: 'Node',
-  void: 'void',
-};
+const { BASE_JAVA_TYPE: JAVA_TYPE, resolveJavaSignature } = require('./java-signatures');
 
 const JAVA_PREAMBLE = `
 import java.util.*;
@@ -313,6 +307,8 @@ public class Main {
 
     static Object canon(Object v) {
         if (v == null) return null;
+        // JSON 解析出的期望数字都是 Double；用户 List<Integer> 里的 Integer 必须归一化
+        if (v instanceof Number) return ((Number) v).doubleValue();
         if (v instanceof ListNode) return canonList((ListNode) v);
         if (v instanceof TreeNode) return canonTree((TreeNode) v);
         if (v instanceof Node) return canonRandom((Node) v);
@@ -327,6 +323,38 @@ public class Main {
             return out;
         }
         return v;
+    }
+
+    // ===== 官方签名适配 helpers =====
+    static List<String> toStringList(Object v) {
+        List<String> out = new ArrayList<>();
+        if (v != null) for (Object x : (List<?>) v) out.add((String) x);
+        return out;
+    }
+
+    static ListNode[] toListNodeArray(Object v) {
+        List<?> a = (List<?>) v;
+        ListNode[] out = new ListNode[a.size()];
+        for (int i = 0; i < a.size(); i++) out[i] = (ListNode) build(a.get(i));
+        return out;
+    }
+
+    static int[][] buildIntGrid(Object v) {
+        char[][] g = (char[][]) build(v);
+        if (g == null) return null;
+        int[][] r = new int[g.length][];
+        for (int i = 0; i < g.length; i++) {
+            r[i] = new int[g[i].length];
+            for (int j = 0; j < g[i].length; j++) r[i][j] = g[i][j] - '0';
+        }
+        return r;
+    }
+
+    static TreeNode findNode(TreeNode root, int val) {
+        if (root == null) return null;
+        if (root.val == val) return root;
+        TreeNode l = findNode(root.left, val);
+        return l != null ? l : findNode(root.right, val);
     }
 
     static String toJson(Object v) {
@@ -431,23 +459,50 @@ function compareExpr(checker, a, b) {
   return `Objects.deepEquals(${a}, ${b})`;
 }
 
+function paramStmt(sig, i) {
+  const p = sig.params[i];
+  switch (p.conv) {
+    case 'stringList': return `List<String> _p${i} = toStringList(args.get(${i}));`;
+    case 'listNodeArray': return `ListNode[] _p${i} = toListNodeArray(args.get(${i}));`;
+    case 'intGrid': return `int[][] _p${i} = buildIntGrid(args.get(${i}));`;
+    case 'nodeByValue': return `TreeNode _p${i} = findNode(_p0, ((Number) args.get(${i})).intValue());`;
+    case 'unsupported': throw new Error(`不支持的第 ${i + 1} 个参数类型: ${p.semantic} → ${p.javaType}`);
+    default: {
+      const conv = PARAM_CONV[p.conv];
+      if (!conv) throw new Error(`未知参数转换: ${p.conv}`);
+      return `${p.javaType} _p${i} = ${conv(i)};`;
+    }
+  }
+}
+
+function returnGotExpr(sig) {
+  switch (sig.returns.adapter) {
+    case 'int': return '(double) _r';
+    case 'double': return '_r';
+    case 'bool': return '_r';
+    case 'string': return '_r';
+    case 'canon': return 'canon(_r)';
+    case 'cycleEntryValue': return '_r == null ? (Object) (-1.0) : (Object) ((double) _r.val)';
+    case 'nodeValue': return '_r == null ? null : (Object) ((double) _r.val)';
+    default: throw new Error(`未知返回适配: ${sig.returns.adapter}`);
+  }
+}
+
 /** function kind：生成逐用例执行体（main 中 try 块内） */
-function buildFunctionBody(core, checker) {
-  const className = core.className;
-  const method = core.method;
-  const mutates = Number(core.mutates ?? -1);
-  const paramStmts = core.params
-    .map((p, i) => `${JAVA_TYPE[p.type]} _p${i} = ${PARAM_CONV[p.type](i)};`)
-    .join('\n');
-  const callArgs = core.params.map((_, i) => `_p${i}`).join(', ');
+function buildFunctionBody(core, checker, sig) {
+  const className = sig.className;
+  const method = sig.method;
+  const mutates = sig.mutates;
+  // #236 的 p/q 需要依赖已构建的 _p0，按参数顺序生成
+  const paramStmts = sig.params.map((_, i) => paramStmt(sig, i)).join('\n');
+  const callArgs = sig.params.map((_, i) => `_p${i}`).join(', ');
   let callLine, gotExpr;
   if (mutates >= 0) {
     callLine = `${className} _sol = new ${className}();\n            _sol.${method}(${callArgs});`;
     gotExpr = `canon(_p${mutates})`;
   } else {
-    const ret = JAVA_TYPE[core.returns];
-    callLine = `${className} _sol = new ${className}();\n            ${ret} _r = _sol.${method}(${callArgs});`;
-    gotExpr = RET_CONV[core.returns]('_r');
+    callLine = `${className} _sol = new ${className}();\n            ${sig.returns.javaType} _r = _sol.${method}(${callArgs});`;
+    gotExpr = returnGotExpr(sig);
   }
   return [
     `List<?> args = (List<?>) c.get("args");`,
@@ -470,7 +525,7 @@ function buildOpsBody(core, checker) {
   const methodDispatch = (core.ops.methods || []).map((m) => {
     const argExpr = m.args.map((t, j) => `${OP_CONV[t](j)}`).join(', ');
     const call = `_obj.${m.name}(${argExpr})`;
-    // 注意：每个 op 都要往 _out 追加一项（与 Python/C++ 驱动一致），void 追加 null
+    // 注意：每个 op 都要往 _out 追加一项，void 追加 null
     const retLine = m.ret === 'void'
       ? `${call}; _out.add(null);`
       : `_out.add(${RET_CONV[m.ret](call)});`;
@@ -500,8 +555,9 @@ function buildOpsBody(core, checker) {
 }
 
 /** 统一入口：function / ops 两种核心代码模式 */
-function buildJavaDriver({ core, code, cases, checker = 'exact' }) {
-  const body = core.kind === 'ops' ? buildOpsBody(core, checker) : buildFunctionBody(core, checker);
+function buildJavaDriver({ core, code, cases, checker = 'exact', problemId }) {
+  const sig = resolveJavaSignature(problemId, core);
+  const body = core.kind === 'ops' ? buildOpsBody(core, checker) : buildFunctionBody(core, checker, sig);
   const driver = JAVA_PREAMBLE.replace('{{MAIN_BODY}}', body);
   // cases 序列化为 cases.json 由 judge.js 写入，这里不内嵌
   return driver;

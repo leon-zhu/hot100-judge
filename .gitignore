@@ -7,7 +7,7 @@ work/dom.html
 work/codetop/
 work/LeetcodeTop/
 
-# 子代理遗留的一次性生成脚本（内容已合并进 public/data）
+# 子代理遗留的一次性生成脚本（内容已合并进 data）
 work/gen-*
 work/make-*
 work/check-*
@@ -28,5 +28,3 @@ work/.chrome-profile/
 
 # hot100 init 生成的解题文件（个人草稿，不入库）
 sol-*.java
-sol-*.py
-sol-*.cpp
