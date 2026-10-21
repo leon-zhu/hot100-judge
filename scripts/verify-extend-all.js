@@ -39,7 +39,7 @@ async function main() {
     for (const lang of LANGS) {
       const code = refFor(p.id, lang);
       if (!code) { row.fails[lang] = 'NO_REF'; continue; }
-      const r = await judgeCore({ language: lang, code, core: p.core, tests: cases });
+      const r = await judgeCore({ language: lang, code, core: p.core, tests: cases, problemId: p.id });
       if (r.error) { row.fails[lang] = 'RUN:' + String(r.error).slice(0, 80); continue; }
       const bad = r.results.filter((x) => !x.ok);
       if (bad.length) row.fails[lang] = `${bad.length}/${r.results.length}`;

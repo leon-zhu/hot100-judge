@@ -136,6 +136,12 @@ def _build(v):
         return [_build(x) for x in v]
     return v
 
+def _norm(v, deep):
+    if isinstance(v, list):
+        items = [_norm(x, deep) for x in v] if deep else list(v)
+        return sorted(items, key=lambda x: json.dumps(x, ensure_ascii=False, sort_keys=True))
+    return v
+
 def _to_json(v):
     if v is None:
         return None
@@ -181,7 +187,12 @@ def _to_json(v):
 /**
  * @param {object} spec { core, code, cases }
  */
-function buildPythonDriver({ core, code, cases }) {
+function buildPythonDriver({ core, code, cases, checker = 'exact' }) {
+  const cmp = (a, b) => {
+    if (checker === 'unorderedTop') return `_norm(${a}, False) == _norm(${b}, False)`;
+    if (checker === 'unorderedDeep') return `_norm(${a}, True) == _norm(${b}, True)`;
+    return `${a} == ${b}`;
+  };
   const lines = [];
   lines.push(PY_PREAMBLE);
   lines.push('\n# ===== 用户代码 =====\n');
@@ -211,7 +222,7 @@ def main():
             got = _run_ops(c)
             entry['expected'] = c['expected']
             entry['got'] = got
-            entry['ok'] = got == c['expected']
+            entry['ok'] = ${cmp('got', "c['expected']")}
         except Exception as e:
             entry.update({'ok': False, 'error': '%s: %s' % (type(e).__name__, e)})
         result.append(entry)
@@ -236,7 +247,7 @@ def main():
             ${call}
             entry['expected'] = c['expected']
             entry['got'] = _to_json(got)
-            entry['ok'] = entry['got'] == _to_json(_build(c['expected']))
+            entry['ok'] = ${cmp("entry['got']", "_to_json(_build(c['expected']))")}
         except Exception as e:
             entry.update({'ok': False, 'error': '%s: %s' % (type(e).__name__, e)})
         result.append(entry)
@@ -413,6 +424,33 @@ string toJson(const Canon& c) {
         }
     }
     return "null";
+}
+
+// 排序键：数字用 17 位精度，避免默认 6 位有效数字导致不同值键相同
+string sortKey(const Canon& c) {
+    switch (c.t) {
+        case Canon::NUL: return "Z";
+        case Canon::BOOL: return c.b ? "B1" : "B0";
+        case Canon::NUM: {
+            ostringstream oss;
+            oss << setprecision(17) << c.num;
+            return "N" + oss.str();
+        }
+        case Canon::STR: return "S" + to_string(c.str.size()) + ":" + c.str;
+        case Canon::ARR: {
+            string out = "A";
+            for (const auto& e : c.arr) { string k = sortKey(e); out += to_string(k.size()) + ":" + k; }
+            return out;
+        }
+    }
+    return "Z";
+}
+
+// 顺序无关比较：deep=false 只排序顶层，deep=true 递归排序所有数组
+void sortCanon(Canon& c, bool deep) {
+    if (c.t != Canon::ARR) return;
+    if (deep) for (auto& e : c.arr) sortCanon(e, true);
+    sort(c.arr.begin(), c.arr.end(), [](const Canon& a, const Canon& b) { return sortKey(a) < sortKey(b); });
 }
 
 Canon canonJ(const JVal& v) {
@@ -648,7 +686,12 @@ function cppReturnCanon(returnsType, valueExpr) {
   }
 }
 
-function buildCppDriver({ core, code, cases }) {
+function buildCppDriver({ core, code, cases, checker = 'exact' }) {
+  const sortLines = (a, b) => {
+    if (checker === 'unorderedTop') return `sortCanon(${a}, false); sortCanon(${b}, false);`;
+    if (checker === 'unorderedDeep') return `sortCanon(${a}, true); sortCanon(${b}, true);`;
+    return '';
+  };
   const parts = [];
   parts.push(CPP_PREAMBLE);
   parts.push('\n// ===== 用户代码 =====\n');
@@ -693,6 +736,7 @@ ${dispatch}
             }
             Canon exp = canonJ(c.arr[2]);
             Canon got; got.t = Canon::ARR; got.arr = _out;
+            ${sortLines('got', 'exp')}
             results.push_back(got == exp ? Canon() : [&]{ Canon e; e.t = Canon::NUM; e.num = 1; return e; }());
         } catch (const exception& ex) {
             Canon e; e.t = Canon::STR; e.str = string("ERR:") + ex.what();
@@ -744,6 +788,7 @@ ${materializeLines}
             ${callExpr}
             Canon _got = ${gotExpr};
             Canon _exp = ${expExpr};
+            ${sortLines('_got', '_exp')}
             if (_got == _exp) {
                 cout << "{\\"ok\\":true}";
             } else {

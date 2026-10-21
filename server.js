@@ -124,7 +124,7 @@ async function handleApi(req, res, body) {
       }
       const caseList = (tests[problemId] && tests[problemId].core) || [];
       if (!caseList.length) return sendJson(res, 400, { ok: false, error: '该题目暂无核心代码测试用例' });
-      const outcome = await judgeCore({ language, code, core, tests: caseList });
+      const outcome = await judgeCore({ language, code, core, tests: caseList, problemId: problem.id });
       if (outcome.error) {
         return sendJson(res, 200, { ok: false, phase: outcome.phase || 'run', error: outcome.error, compileError: outcome.compileError });
       }

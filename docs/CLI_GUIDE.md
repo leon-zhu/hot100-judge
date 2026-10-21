@@ -149,6 +149,8 @@ hot100 judge 20 sol.py --mode acm      # ACM 模式（完整程序，读 stdin �
 
 **评测流程**：读取你的代码 → 编译（真实 javac/gcc/python3）→ 对全部测试用例逐条执行 → 输出每个失败用例的 期望/实际 → 汇总 `✅ n/n` 或 `❌ n/m`。
 
+对 LeetCode 允许任意顺序的题（两数之和、三数之和、全排列、字母异位词分组等），本地按**顺序无关**比较（`judge/checkers.js`），不会因返回顺序不同误判；具体规则为顶层无序或任意层级无序。
+
 ```text
 $ hot100 judge 1 scripts/java-ref/1.java
 #1 两数之和  简单 · java · 核心代码模式

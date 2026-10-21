@@ -55,7 +55,7 @@ async function main() {
   // part 1: 桩冒烟
   for (const prob of ids) {
     if (!tests[prob.id] || !tests[prob.id].core) continue;
-    const out = await judgeCore({ language: 'java', code: stubFor(prob), core: prob.core, tests: tests[prob.id].core });
+    const out = await judgeCore({ language: 'java', code: stubFor(prob), core: prob.core, tests: tests[prob.id].core, problemId: prob.id });
     if (out.error) { console.error(`✗ ${prob.id} ${prob.title}: 驱动错误 ${out.error}`); pass = false; continue; }
     const errs = (out.results || []).filter((r) => r.error && String(r.error).startsWith('ERR:'));
     if (errs.length) { console.error(`✗ ${prob.id} ${prob.title}: ${errs[0].error}`); pass = false; }
@@ -70,7 +70,7 @@ async function main() {
     const prob = problems.find((p) => p.id === id);
     if (!prob) { console.error(`✗ 参考题解 ${id}: 题库中无此题`); pass = false; continue; }
     const code = fs.readFileSync(path.join(dir, f), 'utf8');
-    const out = await judgeCore({ language: 'java', code, core: prob.core, tests: tests[id].core });
+    const out = await judgeCore({ language: 'java', code, core: prob.core, tests: tests[id].core, problemId: id });
     if (out.error) { console.error(`✗ 参考题解 ${id}: ${out.error}`); pass = false; continue; }
     const failed = (out.results || []).filter((r) => !r.ok);
     if (failed.length) {

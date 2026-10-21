@@ -81,22 +81,22 @@ async function main() {
   const argOf = (s) => cases3.filter((c) => c.args[0] === s);
   check('含手写边界 abba', argOf('abba').length > 0);
   check('abba 期望 2', (argOf('abba')[0] || {}).expected === 2);
-  const r3 = await judgeCore({ language: 'python3', code: refPy(3), core: p3.core, tests: cases3 });
+  const r3 = await judgeCore({ language: 'python3', code: refPy(3), core: p3.core, tests: cases3, problemId: 3 });
   check('#3 参考题解全过', !r3.error && r3.results.every((x) => x.ok), r3.error || '');
-  const rBug = await judgeCore({ language: 'java', code: BUGGY_SOL3, core: p3.core, tests: cases3 });
+  const rBug = await judgeCore({ language: 'java', code: BUGGY_SOL3, core: p3.core, tests: cases3, problemId: 3 });
   check('#3 buggy 解必须被判失败', !rBug.error && rBug.results.some((x) => !x.ok), rBug.error || '');
-  const rFix = await judgeCore({ language: 'java', code: FIXED_SOL3, core: p3.core, tests: cases3 });
+  const rFix = await judgeCore({ language: 'java', code: FIXED_SOL3, core: p3.core, tests: cases3, problemId: 3 });
   check('#3 fixed 解必须全过', !rFix.error && rFix.results.every((x) => x.ok), rFix.error || '');
 
   console.log('#146 LRU 缓存（ops 型）回归');
   const p146 = problem(146);
   const cases146 = (await generateExtendedTests(146)).core;
   check('生成非空', cases146.length > 0, `(${cases146.length})`);
-  const r146ref = await judgeCore({ language: 'python3', code: refPy(146), core: p146.core, tests: cases146 });
+  const r146ref = await judgeCore({ language: 'python3', code: refPy(146), core: p146.core, tests: cases146, problemId: 146 });
   check('#146 参考题解全过', !r146ref.error && r146ref.results.every((x) => x.ok), r146ref.error || '');
-  const rBadLru = await judgeCore({ language: 'java', code: BUGGY_LRU, core: p146.core, tests: cases146 });
+  const rBadLru = await judgeCore({ language: 'java', code: BUGGY_LRU, core: p146.core, tests: cases146, problemId: 146 });
   check('#146 buggy LRU 必须被判失败', !rBadLru.error && rBadLru.results.some((x) => !x.ok), rBadLru.error || '');
-  const rFixLru = await judgeCore({ language: 'java', code: FIXED_LRU, core: p146.core, tests: cases146 });
+  const rFixLru = await judgeCore({ language: 'java', code: FIXED_LRU, core: p146.core, tests: cases146, problemId: 146 });
   check('#146 正确 LRU 必须全过', !rFixLru.error && rFixLru.results.every((x) => x.ok), rFixLru.error || '');
 
   console.log('抽样函数题：参考题解全过');
@@ -104,7 +104,7 @@ async function main() {
     const p = problem(id);
     const cases = (await generateExtendedTests(id)).core;
     check(`#${id} 非空`, cases.length > 0, `(${cases.length})`);
-    const r = await judgeCore({ language: 'python3', code: refPy(id), core: p.core, tests: cases });
+    const r = await judgeCore({ language: 'python3', code: refPy(id), core: p.core, tests: cases, problemId: id });
     check(`#${id} 参考全过`, !r.error && r.results.every((x) => x.ok), r.error || '');
   }
 

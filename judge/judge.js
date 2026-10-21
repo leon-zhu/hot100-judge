@@ -10,6 +10,7 @@ const os = require('os');
 const path = require('path');
 const { runProcess, commandExists, DEFAULT_TIMEOUT_MS } = require('./runner');
 const { buildPythonDriver, buildCppDriver, buildJavaDriver } = require('./core-driver');
+const { checkerFor } = require('./checkers');
 
 const CORE_TIMEOUT_MS = 8000;
 
@@ -93,7 +94,8 @@ async function judgeACM({ language, code, tests }) {
 }
 
 /** 核心代码模式评测：一次编译 + 一次运行，跑完全部用例。 */
-async function judgeCore({ language, code, core, tests }) {
+async function judgeCore({ language, code, core, tests, problemId }) {
+  const checker = checkerFor(problemId);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hot100-acm-core-'));
   try {
     const cases = core.kind === 'ops'
@@ -103,7 +105,7 @@ async function judgeCore({ language, code, core, tests }) {
     if (language === 'python3') {
       const python = await commandExists('python3');
       if (!python) return { error: '未找到 python3' };
-      const source = buildPythonDriver({ core, code, cases });
+      const source = buildPythonDriver({ core, code, cases, checker });
       const file = path.join(tmp, 'main.py');
       fs.writeFileSync(file, source, 'utf8');
       const checked = await runProcess(python, ['-m', 'py_compile', file], { cwd: tmp, phase: 'compile' });
@@ -120,7 +122,7 @@ async function judgeCore({ language, code, core, tests }) {
     if (language === 'cpp') {
       const compiler = await commandExists('g++');
       if (!compiler) return { error: '当前系统未安装 g++。' };
-      const source = buildCppDriver({ core, code, cases });
+      const source = buildCppDriver({ core, code, cases, checker });
       const srcFile = path.join(tmp, 'main.cpp');
       const binary = path.join(tmp, 'main');
       const casesFile = path.join(tmp, 'cases.json');
@@ -140,7 +142,7 @@ async function judgeCore({ language, code, core, tests }) {
       const javac = await commandExists('javac');
       const java = await commandExists('java');
       if (!javac || !java) return { error: '当前系统未安装 javac/java。', phase: 'compile' };
-      const source = buildJavaDriver({ core, code, cases });
+      const source = buildJavaDriver({ core, code, cases, checker });
       const srcMain = path.join(tmp, 'Main.java');
       const srcUser = path.join(tmp, `${core.className}.java`);
       const outDir = path.join(tmp, 'out');

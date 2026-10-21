@@ -355,6 +355,15 @@ public class Main {
         return "null";
     }
 
+    // 顺序无关比较：deep=false 只排序顶层，deep=true 递归排序所有数组
+    static Object norm(Object v, boolean deep) {
+        if (!(v instanceof List)) return v;
+        List<Object> out = new ArrayList<>();
+        for (Object e : (List<?>) v) out.add(deep ? norm(e, true) : e);
+        out.sort((a, b) -> toJson(a).compareTo(toJson(b)));
+        return out;
+    }
+
     static String errJson(String msg) { return "{\\"ok\\":false,\\"error\\":" + toJson(msg) + "}"; }
     static String okJson() { return "{\\"ok\\":true}"; }
 
@@ -416,8 +425,14 @@ const RET_CONV = {
   randomList: (r) => `canon(${r})`,
 };
 
+function compareExpr(checker, a, b) {
+  if (checker === 'unorderedTop') return `Objects.deepEquals(norm(${a}, false), norm(${b}, false))`;
+  if (checker === 'unorderedDeep') return `Objects.deepEquals(norm(${a}, true), norm(${b}, true))`;
+  return `Objects.deepEquals(${a}, ${b})`;
+}
+
 /** function kind：生成逐用例执行体（main 中 try 块内） */
-function buildFunctionBody(core) {
+function buildFunctionBody(core, checker) {
   const className = core.className;
   const method = core.method;
   const mutates = Number(core.mutates ?? -1);
@@ -440,7 +455,7 @@ function buildFunctionBody(core) {
     callLine,
     `Object _got = ${gotExpr};`,
     `Object _exp = canon(build(c.get("expected")));`,
-    `if (Objects.deepEquals(_got, _exp)) { sb.append(okJson()); }`,
+    `if (${compareExpr(checker, '_got', '_exp')}) { sb.append(okJson()); }`,
     `else { sb.append("{\\"ok\\":false,\\"expected\\":").append(toJson(_exp)).append(",\\"got\\":").append(toJson(_got)).append("}"); }`,
   ].join('\n');
 }
@@ -448,7 +463,7 @@ function buildFunctionBody(core) {
 /** ops 型：LRU/最小栈/Trie/数据流中位数。按 op 字符串派发。 */
 const OP_CONV = paramConvFor((j) => `_a.get(${j})`);
 
-function buildOpsBody(core) {
+function buildOpsBody(core, checker) {
   const className = core.className;
   const ctor = core.ops.constructor || [];
   const ctorCall = ctor.map((p, j) => `${OP_CONV[p.type](j)}`).join(', ');
@@ -478,15 +493,15 @@ function buildOpsBody(core) {
     `    }`,
     `}`,
     `Object _exp = canon(build(c.get("expected")));`,
-    `if (Objects.deepEquals(_out, _exp)) { sb.append(okJson()); }`,
+    `if (${compareExpr(checker, '_out', '_exp')}) { sb.append(okJson()); }`,
     `else { sb.append("{\\"ok\\":false,\\"expected\\":").append(toJson(_exp)).append(",\\"got\\":").append(toJson(_out)).append("}"); }`,
   ].join('\n');
   return body;
 }
 
 /** 统一入口：function / ops 两种核心代码模式 */
-function buildJavaDriver({ core, code, cases }) {
-  const body = core.kind === 'ops' ? buildOpsBody(core) : buildFunctionBody(core);
+function buildJavaDriver({ core, code, cases, checker = 'exact' }) {
+  const body = core.kind === 'ops' ? buildOpsBody(core, checker) : buildFunctionBody(core, checker);
   const driver = JAVA_PREAMBLE.replace('{{MAIN_BODY}}', body);
   // cases 序列化为 cases.json 由 judge.js 写入，这里不内嵌
   return driver;

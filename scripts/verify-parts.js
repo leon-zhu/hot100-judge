@@ -54,7 +54,7 @@ async function verifyOne(problem, tests, solutions) {
     });
   }
   if (problem.core && sol.python3 && sol.python3.core && t.core && t.core.length) {
-    const r = await withRetry(() => judgeCore({ language: 'python3', code: sol.python3.core, core: problem.core, tests: t.core }));
+    const r = await withRetry(() => judgeCore({ language: 'python3', code: sol.python3.core, core: problem.core, tests: t.core, problemId: problem.id }));
     report.checks.push({
       name: 'core python3',
       pass: !r.error && r.results.every((x) => x.ok),
@@ -62,7 +62,7 @@ async function verifyOne(problem, tests, solutions) {
     });
   }
   if (problem.core && sol.cpp && sol.cpp.core && t.core && t.core.length) {
-    const r = await withRetry(() => judgeCore({ language: 'cpp', code: sol.cpp.core, core: problem.core, tests: t.core }));
+    const r = await withRetry(() => judgeCore({ language: 'cpp', code: sol.cpp.core, core: problem.core, tests: t.core, problemId: problem.id }));
     report.checks.push({
       name: 'core cpp',
       pass: !r.error && r.results.every((x) => x.ok),
@@ -70,7 +70,7 @@ async function verifyOne(problem, tests, solutions) {
     });
   }
   if (problem.core && sol.java && sol.java.core && t.core && t.core.length) {
-    const r = await withRetry(() => judgeCore({ language: 'java', code: sol.java.core, core: problem.core, tests: t.core }));
+    const r = await withRetry(() => judgeCore({ language: 'java', code: sol.java.core, core: problem.core, tests: t.core, problemId: problem.id }));
     report.checks.push({
       name: 'core java',
       pass: !r.error && r.results.every((x) => x.ok),

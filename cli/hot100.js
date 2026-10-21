@@ -301,7 +301,7 @@ async function cmdJudge(flags, positional) {
 
   const { judgeCore, judgeACM, summarize } = require(path.join(ROOT, 'judge', 'judge'));
   const outcome = useCore
-    ? await judgeCore({ language: lang, code, core: p.core, tests })
+    ? await judgeCore({ language: lang, code, core: p.core, tests, problemId: p.id })
     : await judgeACM({ language: lang, code, tests });
   console.log(`\n#${p.id} ${p.title}  ${p.difficulty} · ${lang} · ${mode === 'core' ? '核心代码模式' : 'ACM 模式'}${hasExt ? ` · 含 ${extended.length} 个扩展用例` : ''}`);
   if (outcome.error) {
