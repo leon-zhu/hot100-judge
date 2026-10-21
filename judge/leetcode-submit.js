@@ -73,7 +73,11 @@ async function submit(auth, slug, qid, lang, code) {
   });
   const data = await res.json();
   if (!data || !data.submission_id) {
-    return { error: (data && data.error) || '提交失败（无 submission_id，登录态可能失效）' };
+    const raw = (data && data.error) || '提交失败（无 submission_id，登录态可能失效）';
+    if (/not authenticated|unauthenticated/i.test(raw)) {
+      return { error: '登录态已失效，请运行 hot100 login 重新登录（或更新 work/leetcode-config.json）' };
+    }
+    return { error: raw };
   }
   return { submissionId: data.submission_id };
 }

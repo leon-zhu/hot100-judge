@@ -360,6 +360,11 @@ async function cmdJudge(flags, positional) {
   }
 }
 
+async function cmdLogin(flags) {
+  const { login } = require(path.join(ROOT, 'judge', 'leetcode-login'));
+  await login({ browser: !!flags.browser });
+}
+
 function cmdInit(flags, positional) {
   const id = positional[0];
   if (!id) die('用法: hot100 init <id> [--lang java|python3|cpp]');
@@ -394,8 +399,8 @@ function cmdProgress() {
   const byDiff = { 简单: 0, 中等: 0, 困难: 0 };
   const byTopic = new Map();
   const starList = state.starred.map((id) => DATA.problems.find((p) => p.id === id)).filter(Boolean);
-  for (const p of DATA.problems) {
-    if (!solved.has(p.id)) continue;
+  const solvedList = DATA.problems.filter((p) => solved.has(p.id)).sort((a, b) => a.id - b.id);
+  for (const p of solvedList) {
     byDiff[p.difficulty] = (byDiff[p.difficulty] || 0) + 1;
     byTopic.set(p.topic, (byTopic.get(p.topic) || 0) + 1);
   }
@@ -403,6 +408,7 @@ function cmdProgress() {
   console.log(`收藏 ${starList.length} 题`);
   console.log(`按难度: ${Object.entries(byDiff).map(([k, v]) => `${k} ${v}`).join('  ')}`);
   console.log(`按专题: ${[...byTopic.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v}`).join('  ')}`);
+  if (solvedList.length) console.log(`\n已刷列表:\n` + solvedList.map((p) => `  ✓ #${padW(String(p.id), 4)}${p.title}（${p.difficulty} · ${p.topic}）`).join('\n'));
   if (starList.length) console.log(`\n收藏列表:\n` + starList.map((p) => `  ★ #${p.id} ${p.title}`).join('\n'));
   const undone = DATA.problems.filter((p) => !solved.has(p.id)).slice(0, 10);
   if (undone.length) console.log(`\n推荐继续刷（未完成 ${total - solved.size} 题，前 10）:\n` + undone.map((p) => `  #${p.id} ${p.title}`).join('\n'));
@@ -433,6 +439,13 @@ function usage(code = 1) {
       示例: hot100 random --unfinished   # 只从未完成的题里抽
 
 ── 刷题 ─────────────────────────────
+  login [--browser]          保存 --cloud 所需登录态（不保存密码）
+      默认先从日常 Chrome 导入已登录的 leetcode.cn cookie（需 macOS 钥匙串授权）；
+      找不到有效登录态时才拉起独立 Chrome 窗口手动登录，成功后写入
+      work/leetcode-config.json（chmod 600）。登录失效时重跑一次即可
+      --browser     跳过导入，直接打开浏览器登录
+      示例: hot100 login
+
   init <题号> [--lang java|python3|cpp]   生成模板文件（默认 Java）
       模板含正确的方法签名与 import，可直接开始写
       示例: hot100 init 1 --lang java
@@ -452,7 +465,7 @@ function usage(code = 1) {
       示例: hot100 mark 42 done       # 标记已刷
            hot100 mark 42 star        # 收藏到错题本
 
-  progress                   刷题进度统计（已刷/收藏/难度与专题分布/推荐继续刷）
+  progress                   刷题进度统计（已刷列表/收藏/难度与专题分布/推荐继续刷）
 
   -h, --help                 显示本帮助
 进度数据保存在 work/cli-state.json，纯本地。`);
@@ -467,6 +480,7 @@ async function main() {
     case 'search': cmdSearch(flags, positional); break;
     case 'random': cmdRandom(flags); break;
     case 'show': cmdShow(flags, positional); break;
+    case 'login': await cmdLogin(flags); break;
     case 'init': cmdInit(flags, positional); break;
     case 'judge': await cmdJudge(flags, positional); break;
     case 'mark': cmdMark(flags, positional); break;

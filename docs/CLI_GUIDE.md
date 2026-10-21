@@ -191,10 +191,14 @@ $ hot100 judge 1 scripts/java-ref/1.java
 
 本地判题通过后，可用 `--cloud` 把代码提交到 leetcode.cn 拿官方判定（覆盖隐藏全量用例，能进一步确认本地扩展用例没漏掉的边界）：
 
-1. 浏览器登录 https://leetcode.cn ，打开开发者工具（Network 或 Application/Cookies）取两个 cookie：
-   - `LEETCODE_SESSION`
-   - `csrftoken`
-2. 二选一提供登录态（敏感信息，绝不提交进 git）：
+1. 执行 `hot100 login`：优先**从日常 Chrome 导入**已登录的 leetcode.cn cookie（macOS 首次会请求钥匙串授权），校验有效后直接写入 `work/leetcode-config.json`（`chmod 600`，gitignore），**不保存密码、不弹浏览器**。
+   - 日常 Chrome 没有有效登录态时，才拉起独立 Chrome 窗口手动登录（扫码 / 手机验证码 / 帐号密码）
+   - 独立窗口是全新 profile，风控可能要求滑块验证且易失败；建议先在**日常 Chrome** 登录 leetcode.cn，再重跑 `hot100 login`
+   - `--browser` 可跳过导入，强制打开浏览器登录
+   - 登录态失效时（`--cloud` 提示 `User is not authenticated`）重新执行一次即可
+   - 未安装 Chrome 时可用 `CHROME_PATH=/path/to/chrome hot100 login --browser`；浏览器 profile 缓存在 `work/.chrome-profile/`（gitignore）
+2. 也可手动提供登录态（二选一，敏感信息绝不提交进 git）：
+   - 浏览器登录 https://leetcode.cn ，开发者工具（Application/Cookies）复制 `LEETCODE_SESSION` 和 `csrftoken`
    - 环境变量：`LEETCODE_SESSION=xxx LEETCODE_CSRF_TOKEN=yyy hot100 judge 3 sol-3.java --cloud`
    - 配置文件：`work/leetcode-config.json` 写入 `{ "session": "xxx", "csrf": "yyy" }` 并 `chmod 600`
 3. 运行 `hot100 judge <题号> <文件> --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例与期望。
@@ -227,6 +231,9 @@ hot100 progress
 收藏 3 题
 按难度: 简单 4  中等 7  困难 1
 按专题: 数组/哈希 3  链表 2  动态规划 2  ...
+已刷列表:
+  ✓ #3   无重复字符的最长子串（中等 · 滑动窗口）
+  ✓ #20  有效的括号（简单 · 栈）
 收藏列表:
   ★ #146 LRU 缓存
   ★ #20 有效的括号
