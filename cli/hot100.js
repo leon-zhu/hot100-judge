@@ -131,6 +131,60 @@ function companyTags(p) {
   return p.freq.companies.slice(0, 8).map((c) => `${c.name}(${c.value})`).join(' ');
 }
 
+// 把测试用例里的结构记号转成可读 JSON（list:[1,2,3] → [1,2,3]）
+function exampleValue(v) {
+  if (Array.isArray(v)) return v.map(exampleValue);
+  if (typeof v !== 'string') return v;
+  for (const prefix of ['list:', 'tree:', 'grid:', 'randomList:', 'listArray:']) {
+    if (v.startsWith(prefix)) {
+      try { return JSON.parse(v.slice(prefix.length)); } catch { return v; }
+    }
+  }
+  if (v.startsWith('cycleList:')) {
+    try {
+      const [arr, pos] = JSON.parse(v.slice('cycleList:'.length));
+      return { list: arr, pos };
+    } catch { return v; }
+  }
+  if (v.startsWith('intersectList:')) {
+    try {
+      const [listA, listB, skipA, skipB] = JSON.parse(v.slice('intersectList:'.length));
+      return { listA, listB, skipA, skipB };
+    } catch { return v; }
+  }
+  if (v === 'intersectB:') return '（相交链表的 listB）';
+  return v;
+}
+
+function formatArg(v) {
+  if (v === 'intersectB:') return '（相交链表的 listB）';
+  if (typeof v === 'string' && v.startsWith('cycleList:')) {
+    try {
+      const [arr, pos] = JSON.parse(v.slice('cycleList:'.length));
+      return `${JSON.stringify(arr)}（环入口 pos=${pos}）`;
+    } catch { /* 回退到 JSON */ }
+  }
+  return JSON.stringify(exampleValue(v));
+}
+
+function printExamples(p) {
+  const cases = (DATA.tests[String(p.id)] && DATA.tests[String(p.id)].core) || [];
+  if (!cases.length) return;
+  const sig = resolveJavaSignature(p.id, p.core);
+  console.log('\n样例:');
+  cases.slice(0, 2).forEach((c, idx) => {
+    console.log(`  样例 ${idx + 1}:`);
+    if (p.core.kind === 'ops') {
+      console.log(`    输入: ops = ${JSON.stringify(c.ops)}`);
+      console.log(`          args = ${JSON.stringify(c.args)}`);
+    } else {
+      const parts = sig.params.map((x, i) => `${x.name} = ${formatArg(c.args[i])}`);
+      console.log(`    输入: ${parts.join(', ')}`);
+    }
+    console.log(`    输出: ${JSON.stringify(exampleValue(c.expected))}`);
+  });
+}
+
 function cmdShow(flags, positional) {
   const p = findProblem(positional[0]);
   console.log(`\n#${p.id} ${p.title}   ${p.difficulty} · ${p.topic}`);
@@ -143,6 +197,7 @@ function cmdShow(flags, positional) {
   if (p.core) {
     console.log(`\n核心代码模式（${p.core.kind === 'ops' ? '类' : '函数'}）:`);
     console.log(coreSignature(p));
+    printExamples(p);
   }
   // 解题思路与参考题解默认不展示，加 --explain 追加
   if (flags.explain) {
