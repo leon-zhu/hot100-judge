@@ -403,8 +403,29 @@ function cmdProgress() {
   console.log(`按专题: ${[...byTopic.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v}`).join('  ')}`);
   if (solvedList.length) console.log(`\n已刷列表:\n` + solvedList.map((p) => `  ✓ #${padW(String(p.id), 4)}${p.title}（${p.difficulty} · ${p.topic}）`).join('\n'));
   if (starList.length) console.log(`\n收藏列表:\n` + starList.map((p) => `  ★ #${p.id} ${p.title}`).join('\n'));
-  const undone = DATA.problems.filter((p) => !solved.has(p.id)).slice(0, 10);
-  if (undone.length) console.log(`\n推荐继续刷（未完成 ${total - solved.size} 题，前 10）:\n` + undone.map((p) => `  #${p.id} ${p.title}`).join('\n'));
+  // 推荐优先级：收藏（错题） > CodeTop 高频排名 > 题号
+  const starred = new Set(state.starred);
+  const rankOf = (p) => (p.freq && p.freq.rank) || Number.MAX_SAFE_INTEGER;
+  const undone = DATA.problems
+    .filter((p) => !solved.has(p.id))
+    .sort((a, b) => {
+      const sa = starred.has(a.id) ? 0 : 1;
+      const sb = starred.has(b.id) ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      const ra = rankOf(a);
+      const rb = rankOf(b);
+      if (ra !== rb) return ra - rb;
+      return a.id - b.id;
+    })
+    .slice(0, 10);
+  if (undone.length) {
+    const lines = undone.map((p) => {
+      const mark = starred.has(p.id) ? '★' : ' ';
+      const rank = rankOf(p) === Number.MAX_SAFE_INTEGER ? '-' : rankOf(p);
+      return `  ${mark} #${padW(String(p.id), 4)}${p.title}（高频 ${rank}）`;
+    });
+    console.log(`\n推荐继续刷（未完成 ${total - solved.size} 题，前 10；★ 收藏优先，其次 CodeTop 高频）:\n${lines.join('\n')}`);
+  }
 }
 
 function usage(code = 1) {
