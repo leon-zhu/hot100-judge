@@ -51,10 +51,11 @@ hot100 search 链表
 hot100 random --unfinished                # 随机抽一题
 
 hot100 init 15                            # 生成 sol-15.java（官方签名模板）
-hot100 judge 15 sol-15.java               # 本地评测（内置 + 扩展用例）
-hot100 judge 15 sol-15.java --no-extend   # 只用内置用例
-hot100 judge 15 sol-15.java --regenerate  # 重建扩展用例
-hot100 judge 15 sol-15.java --cloud       # 本地通过后提交力扣官方判定
+hot100 judge 15                          # 默认评测当前目录 sol-15.java
+hot100 judge 15 custom.java              # 优先评测指定文件
+hot100 judge 15 --no-extend               # 只用内置用例
+hot100 judge 15 --regenerate              # 重建扩展用例
+hot100 judge 15 --cloud                   # 本地通过后提交力扣官方判定
 
 hot100 mark 15 done                       # 标记已刷
 hot100 mark 15 star                       # 收藏错题

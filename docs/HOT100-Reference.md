@@ -36,7 +36,8 @@
 ```bash
 hot100 show <id> --explain        # 看题目、官方签名、参考题解
 hot100 init <id>                  # 生成 sol-<id>.java 模板
-hot100 judge <id> sol-<id>.java   # 本地评测（内置用例 + 扩展用例）
+hot100 judge <id>                 # 默认评测当前目录 sol-<id>.java（内置 + 扩展用例）
+hot100 judge <id> custom.java     # 优先评测指定文件
 hot100 mark <id> done             # 标记已刷
 hot100 mark <id> star             # 收藏错题
 hot100 random --unfinished        # 随机抽未完成的题

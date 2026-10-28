@@ -275,8 +275,8 @@ function initTemplate(p) {
 
 async function cmdJudge(flags, positional) {
   const id = positional[0];
-  const file = positional[1];
-  if (!file) die('用法: hot100 judge <id> <文件> [--cloud] [--regenerate] [--no-extend]');
+  if (!id) die('用法: hot100 judge <id> [文件] [--cloud] [--regenerate] [--no-extend]');
+  const file = positional[1] || `sol-${id}.java`;
   if (path.extname(file).toLowerCase() !== '.java') die('仅支持 Java（.java）文件');
   const p = findProblem(id);
   let code;
@@ -467,14 +467,16 @@ function usage(code = 1) {
       旧版简化签名文件不兼容，可重新 init 后迁移代码
       示例: hot100 init 1
 
-  judge <题号> <文件> [选项]   提交 Java 答案评测（仅核心代码模式）
+  judge <题号> [文件] [选项]   提交 Java 答案评测（仅核心代码模式）
+      不填文件时默认使用当前目录的 sol-<题号>.java，指定文件时优先使用指定文件
       自动合并本地扩展测试用例（首次用 Java 参考题解生成缓存，可 --regenerate 重建）
       通过输出 ✅ n/n；失败输出 ❌ 并列出期望/实际（标注内置/扩展）
       --cloud       本地判完后提交 leetcode.cn 拿官方判定（需登录态 cookie）
       --no-extend   只用内置用例
       --regenerate  强制重建扩展用例缓存
-      示例: hot100 judge 1 sol-1.java
-           hot100 judge 3 sol-3.java --cloud
+      示例: hot100 judge 1
+           hot100 judge 1 custom.java
+           hot100 judge 3 --cloud
 
 ── 进度 ─────────────────────────────
   mark <题号> done|star|unstar|reset   标记已刷 / 收藏错题 / 取消

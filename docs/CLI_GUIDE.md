@@ -36,7 +36,7 @@ hot100 show <题号> [--explain]        题目详情
 hot100 search <关键词>                搜索题目
 hot100 random [--company X] [--unfinished]  随机抽一题
 hot100 init <题号>                   生成 Java 模板（sol-<id>.java）
-hot100 judge <题号> <文件> [选项]     提交 Java 答案评测（核心代码模式）
+hot100 judge <题号> [文件] [选项]     提交 Java 答案评测（核心代码模式）
 hot100 login                         保存云端判定所需登录态
 hot100 mark <题号> <操作>             标记已刷 / 收藏
 hot100 progress                       进度统计
@@ -118,12 +118,15 @@ hot100 init 15    # 生成 List<List<Integer>> threeSum(int[] nums)
 - 生成的文件名为 `sol-<题号>.java`，生成后可直接 `judge`
 - **旧版简化签名文件不兼容**（如 `int[][] threeSum`），请重新 `init` 后迁移代码
 
-### 4.2 `judge <题号> <文件> [选项]` — 提交答案评测
+### 4.2 `judge <题号> [文件] [选项]` — 提交答案评测
 
 ```bash
-hot100 judge 1 sol-1.java              # 核心代码模式
-hot100 judge 15 sol-15.java --cloud    # 本地通过后提交力扣官方判定
+hot100 judge 1                        # 默认读取当前目录的 sol-1.java
+hot100 judge 1 custom.java            # 优先使用指定文件
+hot100 judge 15 --cloud               # 使用 sol-15.java，本地通过后提交力扣官方判定
 ```
+
+文件参数可省略，默认使用**当前工作目录**的 `sol-<题号>.java`。显式指定文件时，优先使用该文件；指定文件不存在时直接报错。默认文件不存在时也会提示 `文件不存在: sol-<题号>.java`，可先运行 `hot100 init <题号>` 生成模板并完成实现。
 
 | 选项 | 说明 |
 |---|---|
@@ -187,7 +190,7 @@ $ hot100 judge 1 scripts/java-ref/1.java
    - 浏览器登录 https://leetcode.cn ，开发者工具（Application/Cookies）复制 `LEETCODE_SESSION` 和 `csrftoken`
    - 环境变量：`LEETCODE_SESSION=xxx LEETCODE_CSRF_TOKEN=yyy hot100 judge 3 sol-3.java --cloud`
    - 配置文件：`work/leetcode-config.json` 写入 `{ "session": "xxx", "csrf": "yyy" }` 并 `chmod 600`
-3. 运行 `hot100 judge <题号> <文件> --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例、期望或运行错误。
+3. 运行 `hot100 judge <题号> [文件] --cloud`，末尾输出 `✅/❌ LeetCode: Accepted / Wrong Answer` 等官方判定；失败时附最后一个用例、期望或运行错误。
    - 本地模板已使用力扣官方 Java 签名，提交时**原样提交**，不再需要签名适配层
    - 旧版简化签名文件（如 `int[][]`）请先用 `hot100 init` 生成官方模板并迁移代码
 
@@ -288,7 +291,7 @@ hot100 init 15
 #    …在你自己的编辑器里实现…
 
 # 4. 提交评测
-hot100 judge 15 sol-15.java
+hot100 judge 15
 
 # 5. 通过后标记；卡住再看思路
 hot100 mark 15 done
