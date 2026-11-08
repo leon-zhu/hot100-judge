@@ -138,6 +138,7 @@ flowchart TD
 
 > 模板默认 `import java.util.*;`，链表题默认已有 `ListNode`，树题默认已有 `TreeNode`。
 > 这些模板对齐本仓库 `scripts/java-ref/` 的写法与官方 Java 签名。
+> 每个模板前的注释都标注了对应题号；**覆盖题**中 <u>**加粗下划线**</u> 的题号属于第 6 章的 P0 必刷题。
 
 ### 套路 01 · 哈希表
 
@@ -145,10 +146,10 @@ flowchart TD
 
 **一句话**：用空间换时间，把「找另一个数 / 找同类」变成 O(1) 查询。
 
-**覆盖题**：1、49、128、560、138、146。
+**覆盖题**：<u>**1**</u>、<u>**49**</u>、<u>**128**</u>、<u>**560**</u>、138、<u>**146**</u>。
 
 ```java
-// 两数之和：边遍历边查，先查后存（防止同一元素用两次）
+// 1 两数之和：边遍历边查，先查后存（防止同一元素用两次）
 Map<Integer, Integer> map = new HashMap<>();
 for (int i = 0; i < nums.length; i++) {
     int need = target - nums[i];
@@ -158,7 +159,7 @@ for (int i = 0; i < nums.length; i++) {
 ```
 
 ```java
-// 字母异位词分组：排序后的字符串做 key
+// 49 字母异位词分组：排序后的字符串做 key
 Map<String, List<String>> map = new HashMap<>();
 for (String s : strs) {
     char[] cs = s.toCharArray();
@@ -170,7 +171,7 @@ return new ArrayList<>(map.values());
 ```
 
 ```java
-// 最长连续序列：只从「x-1 不存在」的段首开始数
+// 128 最长连续序列：只从「x-1 不存在」的段首开始数
 Set<Integer> set = new HashSet<>();
 for (int x : nums) set.add(x);
 int ans = 0;
@@ -195,11 +196,12 @@ for (int x : set) {
 
 **一句话**：利用有序性或链表结构，让两个指针单向移动，把 O(n²) 降到 O(n)。
 
-**覆盖题**：11、15、42、283、160、206、234、141、142、19、24、75、287。
+**覆盖题**：<u>**11**</u>、<u>**15**</u>、42、<u>**283**</u>、<u>**160**</u>、<u>**206**</u>、234、<u>**141**</u>、<u>**142**</u>、<u>**19**</u>、24、75、287。
 
-#### 变体 A：对撞双指针（有序 / 两端）
+#### 变体 A：对撞双指针（有序 / 两端）· 对应 11、15、42
 
 ```java
+// 对撞双指针通用骨架（11 盛水容器、42 接雨水）
 int l = 0, r = n - 1;
 while (l < r) {
     // 根据题意决定移动哪一边
@@ -209,7 +211,7 @@ while (l < r) {
 ```
 
 ```java
-// 三数之和：排序 + 固定 i + 双指针 + 跳重
+// 15 三数之和：排序 + 固定 i + 双指针 + 跳重
 Arrays.sort(nums);
 for (int i = 0; i < n - 2; i++) {
     if (i > 0 && nums[i] == nums[i - 1]) continue;
@@ -228,10 +230,10 @@ for (int i = 0; i < n - 2; i++) {
 }
 ```
 
-#### 变体 B：快慢 / 读写双指针
+#### 变体 B：快慢 / 读写双指针 · 对应 283、75、287
 
 ```java
-// 移动零：快指针找非零，慢指针写
+// 283 移动零：快指针找非零，慢指针写
 int slow = 0;
 for (int fast = 0; fast < n; fast++) {
     if (nums[fast] != 0) {
@@ -241,9 +243,10 @@ for (int fast = 0; fast < n; fast++) {
 }
 ```
 
-#### 变体 C：链表快慢指针
+#### 变体 C：链表快慢指针 · 对应 141、142、19、160、206、234
 
 ```java
+// 141 环形链表 / 142 环形链表 II：快慢指针判环骨架
 ListNode slow = head, fast = head;
 while (fast != null && fast.next != null) {
     slow = slow.next;
@@ -267,10 +270,10 @@ while (fast != null && fast.next != null) {
 
 **一句话**：右指针扩张、左指针收缩，窗口内维护计数，每个元素最多进出一次。
 
-**覆盖题**：3、438、76、239（239 用单调队列）。
+**覆盖题**：<u>**3**</u>、<u>**438**</u>、<u>**76**</u>、<u>**239**</u>（用单调队列）。
 
 ```java
-// 可变窗口通用模板
+// 可变窗口通用模板（3 最长无重复子串、76 最小覆盖子串）
 int l = 0, ans = 0;
 int[] cnt = new int[128];
 for (int r = 0; r < n; r++) {
@@ -284,7 +287,7 @@ for (int r = 0; r < n; r++) {
 ```
 
 ```java
-// 定长窗口：找所有字母异位词
+// 438 定长窗口：找所有字母异位词
 int[] need = new int[26], win = new int[26];
 for (char c : p.toCharArray()) need[c - 'a']++;
 for (int r = 0; r < s.length(); r++) {
@@ -296,7 +299,7 @@ for (int r = 0; r < s.length(); r++) {
 ```
 
 ```java
-// 最小覆盖子串：formed / required 计数
+// 76 最小覆盖子串：formed / required 计数
 int[] need = new int[128], have = new int[128];
 for (char c : t.toCharArray()) need[c]++;
 int required = 0;
@@ -331,10 +334,10 @@ return bestL == -1 ? "" : s.substring(bestL, bestL + bestLen);
 
 **一句话**：把「子数组和」转成「两个前缀和之差」，用哈希记录历史前缀。
 
-**覆盖题**：560、238、437。
+**覆盖题**：<u>**560**</u>、238、437。
 
 ```java
-// 和为 K 的子数组
+// 560 和为 K 的子数组
 Map<Integer, Integer> cnt = new HashMap<>();
 cnt.put(0, 1);                          // 空前缀，处理从 0 开始的子数组
 int pre = 0, ans = 0;
@@ -347,7 +350,7 @@ return ans;
 ```
 
 ```java
-// 除自身以外数组的乘积：左积 × 右积，不用除法
+// 238 除自身以外数组的乘积：左积 × 右积，不用除法
 int n = nums.length;
 int[] res = new int[n];
 int left = 1;
@@ -358,7 +361,7 @@ return res;
 ```
 
 ```java
-// 二叉树路径总和 III：前缀和 + 回溯
+// 437 二叉树路径总和 III：前缀和 + 回溯
 Map<Long, Integer> cnt = new HashMap<>();
 cnt.put(0L, 1);
 int dfs(TreeNode node, long pre, int target) {
@@ -386,10 +389,10 @@ int dfs(TreeNode node, long pre, int target) {
 
 **一句话**：每次排除一半；先想清楚「答案落在哪一半」，再写 `lo/hi` 更新。
 
-**覆盖题**：35、74、34、33、153、4、300（二分优化）、287（二分变体）。
+**覆盖题**：<u>**35**</u>、74、<u>**34**</u>、<u>**33**</u>、153、4、<u>**300**</u>（二分优化）、287（二分变体）。
 
 ```java
-// 模板 A：lower_bound —— 第一个 >= target 的位置（左闭右开，最常用）
+// 模板 A：lower_bound —— 第一个 >= target 的位置（左闭右开，最常用）· 对应 35、34、300
 int lowerBound(int[] a, int target) {
     int lo = 0, hi = a.length;
     while (lo < hi) {
@@ -402,7 +405,7 @@ int lowerBound(int[] a, int target) {
 ```
 
 ```java
-// 模板 B：闭区间查找精确值 / 经典二分
+// 模板 B：闭区间查找精确值 / 经典二分 · 对应 74
 int lo = 0, hi = a.length - 1;
 while (lo <= hi) {
     int mid = lo + (hi - lo) / 2;
@@ -414,7 +417,7 @@ return -1;
 ```
 
 ```java
-// 旋转有序数组搜索：先判断哪一半有序
+// 33 旋转有序数组搜索：先判断哪一半有序
 while (lo <= hi) {
     int mid = lo + (hi - lo) / 2;
     if (nums[mid] == target) return mid;
@@ -429,7 +432,7 @@ while (lo <= hi) {
 ```
 
 ```java
-// 34：第一次和最后一次出现
+// 34 在排序数组中查找首尾位置：第一次和最后一次出现
 int l = lowerBound(nums, target);
 if (l == nums.length || nums[l] != target) return new int[]{-1, -1};
 // 最后一个位置 = 第一个 > target 的位置 - 1
@@ -452,10 +455,10 @@ int r = upperBound(nums, target) - 1;
 
 **一句话**：哑节点统一边界，改指针前先保存 `next`，快慢指针找位置。
 
-**覆盖题**：160、206、234、141、142、21、2、19、24、25、138、148、23、146。
+**覆盖题**：<u>**160**</u>、<u>**206**</u>、234、<u>**141**</u>、<u>**142**</u>、<u>**21**</u>、2、<u>**19**</u>、24、25、138、148、23、<u>**146**</u>。
 
 ```java
-// 哑节点模板：删除头节点 / 合并 / 插入都好用
+// 哑节点模板：删除头节点 / 合并 / 插入都好用（21、19、24、2）
 ListNode dummy = new ListNode(0);
 dummy.next = head;
 ListNode pre = dummy;
@@ -464,7 +467,7 @@ return dummy.next;
 ```
 
 ```java
-// 反转区间 [a, b)：K 个一组、反转链表都靠它
+// 反转区间 [a, b)：K 个一组、反转链表都靠它（206、25）
 ListNode reverse(ListNode a, ListNode b) {
     ListNode pre = null;
     while (a != b) {
@@ -478,7 +481,7 @@ ListNode reverse(ListNode a, ListNode b) {
 ```
 
 ```java
-// 删除倒数第 N 个：快指针先走 N 步
+// 19 删除倒数第 N 个：快指针先走 N 步
 ListNode dummy = new ListNode(0);
 dummy.next = head;
 ListNode fast = dummy, slow = dummy;
@@ -489,7 +492,7 @@ return dummy.next;
 ```
 
 ```java
-// 两两交换：prev -> a -> b 重新接线
+// 24 两两交换：prev -> a -> b 重新接线
 while (prev.next != null && prev.next.next != null) {
     ListNode a = prev.next, b = a.next;
     a.next = b.next;
@@ -500,7 +503,7 @@ while (prev.next != null && prev.next.next != null) {
 ```
 
 ```java
-// 相交链表：走完自己走对方，路程相同必相遇
+// 160 相交链表：走完自己走对方，路程相同必相遇
 ListNode a = headA, b = headB;
 while (a != b) {
     a = (a == null) ? headB : a.next;
@@ -525,10 +528,10 @@ return a;
 
 **一句话**：递归三问——终止条件是什么？本层做什么？向父节点返回什么？
 
-**覆盖题**：94、104、226、101、543、114、105、437、236、124。
+**覆盖题**：<u>**94**</u>、<u>**104**</u>、<u>**226**</u>、<u>**101**</u>、<u>**543**</u>、114、<u>**105**</u>、437、<u>**236**</u>、124。
 
 ```java
-// 递归通用骨架
+// 递归通用骨架（94、104、226、101、105）
 int dfs(TreeNode node) {
     if (node == null) return 0;          // 终止条件
     int l = dfs(node.left);              // 左
@@ -584,9 +587,10 @@ TreeNode lca(TreeNode node, TreeNode p, TreeNode q) {
 
 **一句话**：队列 + 先记录本层大小 `sz`，循环 `sz` 次只处理本层。
 
-**覆盖题**：102、199、994（多源 BFS）、104（也可 BFS）。
+**覆盖题**：<u>**102**</u>、199、<u>**994**</u>（多源 BFS）、<u>**104**</u>（也可 BFS）。
 
 ```java
+// 102 层序遍历 / 199 右视图：BFS 通用骨架
 Queue<TreeNode> q = new ArrayDeque<>();
 if (root != null) q.offer(root);
 while (!q.isEmpty()) {
@@ -644,7 +648,7 @@ return fresh == 0 ? minutes : -1;
 
 **一句话**：BST 的中序遍历是升序；验证 BST 要传上下界，不能只比父节点。
 
-**覆盖题**：98、230、108、235（Hot100 中 98/230/108 为主）。
+**覆盖题**：<u>**98**</u>、230、108、235（Hot100 中 <u>**98**</u>/230/108 为主）。
 
 ```java
 // 98 验证 BST：向下传开区间 (lo, hi)
@@ -698,7 +702,7 @@ TreeNode build(int[] nums, int l, int r) {
 
 **一句话**：网格就是图，四方向遍历；访问过的格子直接改值，省 visited 数组。
 
-**覆盖题**：200、994、79（回溯版）、130（扩展）。
+**覆盖题**：<u>**200**</u>、<u>**994**</u>、79（回溯版）、130（扩展）。
 
 ```java
 // 200 岛屿数量：DFS 淹没
@@ -720,7 +724,7 @@ void dfs(char[][] g, int i, int j) {
 ```
 
 ```java
-// 方向数组写法，更通用
+// 网格四方向遍历骨架（200、994、79、130），更通用
 int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1}};
 for (int[] d : dirs) {
     int x = i + d[0], y = j + d[1];
@@ -742,9 +746,10 @@ for (int[] d : dirs) {
 
 **一句话**：建图 + 入度表，入度为 0 的入队，能处理完所有节点则无环。
 
-**覆盖题**：207、210（扩展）。
+**覆盖题**：<u>**207**</u>、210（扩展）。
 
 ```java
+// 207 课程表：Kahn 拓扑排序
 boolean canFinish(int numCourses, int[][] prerequisites) {
     List<List<Integer>> g = new ArrayList<>();
     for (int i = 0; i < numCourses; i++) g.add(new ArrayList<>());
@@ -781,10 +786,10 @@ boolean canFinish(int numCourses, int[][] prerequisites) {
 
 **一句话**：选择 → 递归 → 撤销选择；组合用 `start` 防重复，排列用 `used`。
 
-**覆盖题**：46、78、17、39、22、79、131、51。
+**覆盖题**：<u>**46**</u>、<u>**78**</u>、17、39、<u>**22**</u>、79、131、51。
 
 ```java
-// 通用骨架
+// 回溯通用骨架（46、78、17、39、22、79、131、51）
 void dfs(int start) {
     if (/* 终止条件 */) {
         res.add(new ArrayList<>(path));   // 必须深拷贝
@@ -805,11 +810,11 @@ void dfs(int start) {
 
 | 题 | 递归参数 | 循环起点 | 终止条件 | 去重方式 |
 |---|---|---|---|---|
-| 46 全排列 | `used[], depth` | 0 | `depth == n` | `used[i]` |
-| 78 子集 | `start` | `start` | 每个节点都收集 | `start` 只往后选 |
+| <u>**46**</u> 全排列 | `used[], depth` | 0 | `depth == n` | `used[i]` |
+| <u>**78**</u> 子集 | `start` | `start` | 每个节点都收集 | `start` 只往后选 |
 | 39 组合总和 | `start, remain` | `start` | `remain == 0` | 允许重复选 `i` |
 | 17 电话号码 | `digitIndex` | 字母表 | 处理完所有数字 | 无 |
-| 22 括号生成 | `open, close` | 两种选择 | `open+close == 2n` | `open<n`、`close<open` |
+| <u>**22**</u> 括号生成 | `open, close` | 两种选择 | `open+close == 2n` | `open<n`、`close<open` |
 | 51 N 皇后 | `row` | 列 | `row == n` | 列 + 两对角线 |
 | 79 单词搜索 | `i, j, idx` | 四方向 | `idx == len` | 改字符 + 恢复 |
 | 131 分割回文串 | `start` | 回文前缀 | `start == n` | 枚举前缀 |
@@ -847,7 +852,7 @@ void dfs(int r) {
 
 **一句话**：栈处理「最近相关性」；单调栈维护「还没找到答案的下标」。
 
-**覆盖题**：20、155、394、739、84、32。
+**覆盖题**：<u>**20**</u>、155、394、<u>**739**</u>、84、32。
 
 ```java
 // 20 有效括号
@@ -919,7 +924,7 @@ int getMin() { return min.peek(); }
 
 **一句话**：求第 K 大用小根堆，求第 K 小用大根堆；流式中位数用双堆。
 
-**覆盖题**：215、347、295、23。
+**覆盖题**：<u>**215**</u>、<u>**347**</u>、295、23。
 
 ```java
 // 215 第 K 大：小根堆，堆内保持最大的 k 个
@@ -976,7 +981,7 @@ double findMedian() {
 
 **一句话**：每一步取局部最优，且能证明不破坏全局最优。
 
-**覆盖题**：121、55、45、763、53、300。
+**覆盖题**：<u>**121**</u>、<u>**55**</u>、45、763、53、<u>**300**</u>。
 
 ```java
 // 121 买卖股票：维护历史最低价
@@ -1037,15 +1042,15 @@ for (int i = 0; i < s.length(); i++) {
 **一句话**：定义状态 → 写转移 → 定初值 → 定遍历顺序 → 想空间优化。
 
 **覆盖题**：
-- 线性 DP：53、70、118、121、198、152、279、322、139
-- 0/1 背包：416
-- 序列 DP：300
+- 线性 DP：53、<u>**70**</u>、118、<u>**121**</u>、<u>**198**</u>、152、279、<u>**322**</u>、139
+- 0/1 背包：<u>**416**</u>
+- 序列 DP：<u>**300**</u>
 - 字符串 DP：5、32、72、1143
 - 网格 DP：62、64
 - 树形 DP：124、337（扩展）
 
 ```java
-// 一维线性 DP 骨架
+// 一维线性 DP 骨架（70、118、198、152、279、322、139）
 int[] dp = new int[n + 1];
 dp[0] = ...;                             // 初值
 for (int i = 1; i <= n; i++) {
@@ -1055,7 +1060,7 @@ return dp[n];
 ```
 
 ```java
-// 二维 DP 骨架
+// 二维 DP 骨架（62、64、72、1143）
 int[][] dp = new int[m + 1][n + 1];
 for (int i = 1; i <= m; i++)
     for (int j = 1; j <= n; j++)
@@ -1180,7 +1185,7 @@ return ans;
 
 **一句话**：利用题目给的额外性质（异或、多数、值域 1..n、矩阵有序）把空间降到 O(1)。
 
-**覆盖题**：136、169、75、31、287、41、189、73、54、48、238。
+**覆盖题**：<u>**136**</u>、<u>**169**</u>、75、31、287、41、189、73、54、48、238。
 
 ```java
 // 136 只出现一次：全部异或
@@ -1273,7 +1278,7 @@ reverse(nums, k, n - 1);
 
 **一句话**：先想「每个操作需要什么数据结构」，再组合。
 
-**覆盖题**：146、155、208、295。
+**覆盖题**：<u>**146**</u>、155、208、295。
 
 ```java
 // 146 LRU：哈希 + 双向链表

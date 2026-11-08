@@ -118,6 +118,7 @@ judge/
   leetcode-login.js           浏览器代登录抓 cookie
 data/                         题库 / 用例 / Java 题解（JSON，离线）
 scripts/java-ref/<id>.java    100 份 Java 参考题解
+scripts/build-pdf.js          Markdown 攻略 → A4 打印版 PDF
 work/parts/                   数据分片（维护时修改）
 ```
 
@@ -135,6 +136,18 @@ npm run verify                    # 依次执行以上验证
 ```
 
 CI（`.github/workflows/ci.yml`）在每次 push/PR 时运行上述验证（Node 20 + JDK 17）。
+
+---
+
+## 📄 攻略文档与 PDF
+
+```bash
+npm run build:pdf     # docs/HOT100-Reference.md → docs/HOT100-Reference.pdf
+```
+
+- `scripts/build-pdf.js` 用 headless Chrome 渲染 A4 打印版：封面、章节分页、页脚页码，mermaid 决策树会转成表格。
+- 修改 Markdown 后需要重新执行一次，PDF 不会自动同步。
+- 依赖本机 Chrome 与 Playwright；未安装 Playwright 时按提示执行 `npm i -D playwright`。
 
 ---
 

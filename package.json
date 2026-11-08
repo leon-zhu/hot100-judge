@@ -6,6 +6,7 @@
   },
   "scripts": {
     "build:data": "node scripts/merge-parts.js",
+    "build:pdf": "node scripts/build-pdf.js docs/HOT100-Reference.md docs/HOT100-Reference.pdf",
     "verify": "node scripts/verify-java.js && node scripts/test-judge.js && node scripts/test-extend.js && node scripts/verify-extend-all.js"
   },
   "dependencies": {},
